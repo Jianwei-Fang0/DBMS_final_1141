@@ -136,6 +136,32 @@ SELECT
 FROM BOOKING
 WHERE booking_id = 2;
 
+-- 步驟 4: 建立 BOOKING_SLOT 切片（時段切段）
+INSERT INTO BOOKING_SLOT (booking_id, venue_id, slot_start)
+SELECT 
+    b.booking_id,
+    b.venue_id,
+    generate_series(
+        (b.date || ' ' || b.start_time)::TIMESTAMP,
+        (b.date || ' ' || b.end_time)::TIMESTAMP - 
+        (COALESCE(
+            (SELECT slot_minute FROM TIMESLOT_RULE 
+             WHERE venue_id = b.venue_id 
+               AND weekday = EXTRACT(DOW FROM b.date)
+             LIMIT 1),
+            30
+        ) || ' minutes')::INTERVAL,
+        COALESCE(
+            (SELECT slot_minute FROM TIMESLOT_RULE 
+             WHERE venue_id = b.venue_id 
+               AND weekday = EXTRACT(DOW FROM b.date)
+             LIMIT 1),
+            30
+        ) || ' minutes'
+    )::TIMESTAMP
+FROM BOOKING b
+WHERE b.booking_id = 2;
+
 -- 如果一切正常，提交
 COMMIT;
 
@@ -234,6 +260,51 @@ INSERT INTO APPROVAL (
     NOW()
 );
 
+-- 鎖定時段
+INSERT INTO BLOCKED_SLOT (
+    block_id,
+    venue_id,
+    date,
+    start_time,
+    end_time,
+    reason
+) 
+SELECT 
+    (SELECT COALESCE(MAX(block_id), 0) + 1 FROM BLOCKED_SLOT),
+    venue_id,
+    date,
+    start_time,
+    end_time,
+    '已核准預約：' || purpose
+FROM BOOKING
+WHERE booking_id = 3;
+
+-- 建立 BOOKING_SLOT 切片（時段切段）
+INSERT INTO BOOKING_SLOT (booking_id, venue_id, slot_start)
+SELECT 
+    b.booking_id,
+    b.venue_id,
+    generate_series(
+        (b.date || ' ' || b.start_time)::TIMESTAMP,
+        (b.date || ' ' || b.end_time)::TIMESTAMP - 
+        (COALESCE(
+            (SELECT slot_minute FROM TIMESLOT_RULE 
+             WHERE venue_id = b.venue_id 
+               AND weekday = EXTRACT(DOW FROM b.date)
+             LIMIT 1),
+            30
+        ) || ' minutes')::INTERVAL,
+        COALESCE(
+            (SELECT slot_minute FROM TIMESLOT_RULE 
+             WHERE venue_id = b.venue_id 
+               AND weekday = EXTRACT(DOW FROM b.date)
+             LIMIT 1),
+            30
+        ) || ' minutes'
+    )::TIMESTAMP
+FROM BOOKING b
+WHERE b.booking_id = 3;
+
 COMMIT;
 
 -- ============================================
@@ -266,47 +337,47 @@ ORDER BY b.created_at DESC;
 -- ============================================
 
 -- ============================================
--- 6. 檢查申請人是否在黑名單中
--- ============================================
--- 注意：如果系統有黑名單表，請替換為實際的表名
--- 假設黑名單表結構：BLACKLIST (user_id, reason, blocked_until, status)
-SELECT 
-    b.booking_id,
-    u.user_id,
-    u.name AS applicant_name,
-    u.email AS applicant_email,
-    CASE 
-        WHEN bl.user_id IS NOT NULL THEN '在黑名單中'
-        ELSE '不在黑名單中'
-    END AS blacklist_status,
-    bl.reason AS blacklist_reason,
-    bl.blocked_until
-FROM BOOKING b
-JOIN "USER" u ON b.user_id = u.user_id
-LEFT JOIN BLACKLIST bl ON u.user_id = bl.user_id 
-    AND (bl.blocked_until IS NULL OR bl.blocked_until > CURRENT_DATE)
-    AND bl.status = 'Active'
-WHERE b.booking_id = 2;  -- 替換為實際的 booking_id
+-- -- 6. 檢查申請人是否在黑名單中
+-- -- ============================================
+-- -- 注意：如果系統有黑名單表，請替換為實際的表名
+-- -- 假設黑名單表結構：BLACKLIST (user_id, reason, blocked_until, status)
+-- SELECT 
+--     b.booking_id,
+--     u.user_id,
+--     u.name AS applicant_name,
+--     u.email AS applicant_email,
+--     CASE 
+--         WHEN bl.user_id IS NOT NULL THEN '在黑名單中'
+--         ELSE '不在黑名單中'
+--     END AS blacklist_status,
+--     bl.reason AS blacklist_reason,
+--     bl.blocked_until
+-- FROM BOOKING b
+-- JOIN "USER" u ON b.user_id = u.user_id
+-- LEFT JOIN BLACKLIST bl ON u.user_id = bl.user_id 
+--     AND (bl.blocked_until IS NULL OR bl.blocked_until > CURRENT_DATE)
+--     AND bl.status = 'Active'
+-- WHERE b.booking_id = 2;  -- 替換為實際的 booking_id
+
+-- -- ============================================
+-- -- 7. 檢查申請人的違規紀錄
+-- -- ============================================
+-- -- 注意：如果系統有違規紀錄表，請替換為實際的表名
+-- -- 假設違規紀錄表結構：VIOLATION (violation_id, user_id, booking_id, violation_type, description, created_at)
+-- SELECT 
+--     b.booking_id,
+--     u.user_id,
+--     u.name AS applicant_name,
+--     COUNT(v.violation_id) AS violation_count,
+--     MAX(v.created_at) AS last_violation_date
+-- FROM BOOKING b
+-- JOIN "USER" u ON b.user_id = u.user_id
+-- LEFT JOIN VIOLATION v ON u.user_id = v.user_id
+-- WHERE b.booking_id = 2  -- 替換為實際的 booking_id
+-- GROUP BY b.booking_id, u.user_id, u.name;
 
 -- ============================================
--- 7. 檢查申請人的違規紀錄
--- ============================================
--- 注意：如果系統有違規紀錄表，請替換為實際的表名
--- 假設違規紀錄表結構：VIOLATION (violation_id, user_id, booking_id, violation_type, description, created_at)
-SELECT 
-    b.booking_id,
-    u.user_id,
-    u.name AS applicant_name,
-    COUNT(v.violation_id) AS violation_count,
-    MAX(v.created_at) AS last_violation_date
-FROM BOOKING b
-JOIN "USER" u ON b.user_id = u.user_id
-LEFT JOIN VIOLATION v ON u.user_id = v.user_id
-WHERE b.booking_id = 2  -- 替換為實際的 booking_id
-GROUP BY b.booking_id, u.user_id, u.name;
-
--- ============================================
--- 8. 檢查場地規範（容量、開放狀態、設備需求）
+-- 8. 檢查場地規範（容量、開放狀態、設備需求）應該是 客戶端那邊就要檢查
 -- ============================================
 SELECT 
     b.booking_id,
@@ -328,7 +399,7 @@ JOIN VENUE v ON b.venue_id = v.venue_id
 WHERE b.booking_id = 2;  -- 替換為實際的 booking_id
 
 -- ============================================
--- 9. 檢查時段衝突（與已核准的預約和保留時段）
+-- 9. 檢查時段衝突（與已核准的預約和保留時段） 
 -- ============================================
 SELECT 
     b.booking_id,
@@ -529,7 +600,33 @@ SELECT
 FROM BOOKING
 WHERE booking_id = 2;
 
--- 步驟 4: 建立付款記錄（如果需要）
+-- 步驟 4: 建立 BOOKING_SLOT 切片（時段切段）
+INSERT INTO BOOKING_SLOT (booking_id, venue_id, slot_start)
+SELECT 
+    b.booking_id,
+    b.venue_id,
+    generate_series(
+        (b.date || ' ' || b.start_time)::TIMESTAMP,
+        (b.date || ' ' || b.end_time)::TIMESTAMP - 
+        (COALESCE(
+            (SELECT slot_minute FROM TIMESLOT_RULE 
+             WHERE venue_id = b.venue_id 
+               AND weekday = EXTRACT(DOW FROM b.date)
+             LIMIT 1),
+            30
+        ) || ' minutes')::INTERVAL,
+        COALESCE(
+            (SELECT slot_minute FROM TIMESLOT_RULE 
+             WHERE venue_id = b.venue_id 
+               AND weekday = EXTRACT(DOW FROM b.date)
+             LIMIT 1),
+            30
+        ) || ' minutes'
+    )::TIMESTAMP
+FROM BOOKING b
+WHERE b.booking_id = 2;
+
+-- 步驟 5: 建立付款記錄（如果需要）
 -- INSERT INTO PAYMENT (
 --     payment_id,
 --     booking_id,
