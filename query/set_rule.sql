@@ -8,7 +8,7 @@
 -- ============================================
 
 -- ============================================
--- 1.1 查看所有時段規則
+-- 1.1 查看所有時段規則  ACTION: SEARCH_TIMESLOT_RULE_ALL
 -- ============================================
 SELECT 
     tr.rule_id,
@@ -32,7 +32,7 @@ JOIN VENUE v ON tr.venue_id = v.venue_id
 ORDER BY tr.venue_id, tr.weekday;
 
 -- ============================================
--- 1.2 查看特定場地的時段規則
+-- 1.2 查看特定場地的時段規則  ACTION: SEARCH_TIMESLOT_RULE_BY_VENUE
 -- ============================================
 SELECT 
     tr.rule_id,
@@ -56,7 +56,7 @@ WHERE tr.venue_id = @venue_id  -- 替換為實際的場地ID，例如：WHERE tr
 ORDER BY tr.weekday;
 
 -- ============================================
--- 1.3 新增時段規則
+-- 1.3 新增時段規則  ACTION: ADD_TIMESLOT_RULE
 -- ============================================
 -- 參數說明：
 --   @venue_id: 場地ID
@@ -98,7 +98,7 @@ INSERT INTO TIMESLOT_RULE (
 -- );
 
 -- ============================================
--- 1.4 更新時段規則
+-- 1.4 更新時段規則  ACTION: UPDATE_TIMESLOT_RULE
 -- ============================================
 -- 參數說明：
 --   @rule_id: 規則ID
@@ -121,7 +121,7 @@ WHERE rule_id = @rule_id;  -- 替換為實際的規則ID，例如：WHERE rule_i
 -- WHERE rule_id = 1;
 
 -- ============================================
--- 1.5 刪除時段規則
+-- 1.5 刪除時段規則  ACTION: DELETE_TIMESLOT_RULE
 -- ============================================
 -- DELETE FROM TIMESLOT_RULE
 -- WHERE rule_id = @rule_id;  -- 替換為實際的規則ID
@@ -131,7 +131,7 @@ WHERE rule_id = @rule_id;  -- 替換為實際的規則ID，例如：WHERE rule_i
 -- ============================================
 
 -- ============================================
--- 2.1 查看所有臨時阻擋
+-- 2.1 查看所有臨時阻擋  ACTION: SEARCH_BLOCKED_SLOT_ALL
 -- ============================================
 SELECT 
     bs.block_id,
@@ -151,7 +151,7 @@ JOIN VENUE v ON bs.venue_id = v.venue_id
 ORDER BY bs.date DESC, bs.start_time;
 
 -- ============================================
--- 2.2 查看特定場地的臨時阻擋
+-- 2.2 查看特定場地的臨時阻擋  ACTION: SEARCH_BLOCKED_SLOT_BY_VENUE
 -- ============================================
 SELECT 
     bs.block_id,
@@ -167,7 +167,7 @@ WHERE bs.venue_id = @venue_id  -- 替換為實際的場地ID
 ORDER BY bs.date, bs.start_time;
 
 -- ============================================
--- 2.3 建立臨時阻擋
+-- 2.3 建立臨時阻擋  ACTION: ADD_BLOCKED_SLOT
 -- ============================================
 -- 參數說明：
 --   @venue_id: 場地ID
@@ -209,7 +209,7 @@ INSERT INTO BLOCKED_SLOT (
 -- );
 
 -- ============================================
--- 2.4 刪除臨時阻擋
+-- 2.4 刪除臨時阻擋  ACTION: DELETE_BLOCKED_SLOT
 -- ============================================
 -- DELETE FROM BLOCKED_SLOT
 -- WHERE block_id = @block_id;  -- 替換為實際的阻擋ID
@@ -219,7 +219,7 @@ INSERT INTO BLOCKED_SLOT (
 -- ============================================
 
 -- ============================================
--- 3.1 查看所有費率方案
+-- 3.1 查看所有費率方案  ACTION: SEARCH_RATE_PLAN_ALL
 -- ============================================
 SELECT 
     rp.plan_id,
@@ -236,7 +236,7 @@ GROUP BY rp.plan_id, rp.venue_id, v.name, rp.name, rp.status
 ORDER BY rp.venue_id, rp.plan_id;
 
 -- ============================================
--- 3.2 查看特定場地的費率方案
+-- 3.2 查看特定場地的費率方案  ACTION: SEARCH_RATE_PLAN_BY_VENUE
 -- ============================================
 SELECT 
     rp.plan_id,
@@ -252,7 +252,7 @@ WHERE rp.venue_id = @venue_id  -- 替換為實際的場地ID
 ORDER BY rv.effective_from DESC;
 
 -- ============================================
--- 3.3 查看費率方案的詳細價格規則
+-- 3.3 查看費率方案的詳細價格規則  ACTION: SEARCH_PRICE_RULE_BY_PLAN
 -- ============================================
 SELECT 
     rp.plan_id,
@@ -278,7 +278,7 @@ WHERE rp.plan_id = @plan_id  -- 替換為實際的方案ID
 ORDER BY rv.effective_from DESC, pr.affiliation, pr.day_type, pr.start_time;
 
 -- ============================================
--- 3.4 建立新的費率方案
+-- 3.4 建立新的費率方案  ACTION: ADD_RATE_PLAN
 -- ============================================
 -- 參數說明：
 --   @venue_id: 場地ID
@@ -310,7 +310,7 @@ INSERT INTO RATE_PLAN (
 -- );
 
 -- ============================================
--- 3.5 建立費率版本
+-- 3.5 建立費率版本  ACTION: ADD_RATE_VERSION
 -- ============================================
 -- 參數說明：
 --   @plan_id: 方案ID
@@ -346,7 +346,7 @@ INSERT INTO RATE_VERSION (
 -- );
 
 -- ============================================
--- 3.6 建立價格規則
+-- 3.6 建立價格規則  ACTION: ADD_PRICE_RULE
 -- ============================================
 -- 參數說明：
 --   @version_id: 版本ID
@@ -418,7 +418,7 @@ INSERT INTO PRICE_RULE (
 -- );
 
 -- ============================================
--- 3.7 更新費率方案狀態
+-- 3.7 更新費率方案狀態  ACTION: UPDATE_RATE_PLAN_STATUS
 -- ============================================
 -- UPDATE RATE_PLAN
 -- SET status = @status  -- 'On' 或 'Off'
@@ -429,7 +429,7 @@ INSERT INTO PRICE_RULE (
 -- ============================================
 
 -- ============================================
--- 4.1 查看所有場地的設備庫存
+-- 4.1 查看所有場地的設備庫存  ACTION: SEARCH_VENUE_EQUIP_ALL
 -- ============================================
 SELECT 
     ve.venue_id,
@@ -446,7 +446,7 @@ JOIN EQUIPMENT e ON ve.equip_id = e.equip_id
 ORDER BY ve.venue_id, e.name;
 
 -- ============================================
--- 4.2 查看特定場地的設備庫存
+-- 4.2 查看特定場地的設備庫存  ACTION: SEARCH_VENUE_EQUIP_BY_VENUE
 -- ============================================
 SELECT 
     ve.equip_id,
@@ -462,7 +462,7 @@ WHERE ve.venue_id = @venue_id  -- 替換為實際的場地ID
 ORDER BY e.name;
 
 -- ============================================
--- 4.3 更新設備庫存數量
+-- 4.3 更新設備庫存數量  ACTION: UPDATE_VENUE_EQUIP_STOCK
 -- ============================================
 -- 參數說明：
 --   @venue_id: 場地ID
@@ -480,7 +480,7 @@ WHERE venue_id = @venue_id  -- 替換為實際的場地ID
 --   AND equip_id = 1;
 
 -- ============================================
--- 4.4 新增場地設備（如果不存在）
+-- 4.4 新增場地設備（如果不存在）  ACTION: ADD_VENUE_EQUIP
 -- ============================================
 -- 參數說明：
 --   @venue_id: 場地ID
@@ -517,7 +517,7 @@ SET stock_qty = EXCLUDED.stock_qty;
 -- SET stock_qty = EXCLUDED.stock_qty;
 
 -- ============================================
--- 4.5 更新設備預設包含狀態
+-- 4.5 更新設備預設包含狀態  ACTION: UPDATE_VENUE_EQUIP_DEFAULT
 -- ============================================
 -- UPDATE VENUE_EQUIP
 -- SET default_on_bool = @default_on_bool  -- true 或 false
@@ -529,7 +529,7 @@ SET stock_qty = EXCLUDED.stock_qty;
 -- ============================================
 
 -- ============================================
--- 5.1 查看所有設備加價規則
+-- 5.1 查看所有設備加價規則  ACTION: SEARCH_EQUIP_PRICE_RULE_ALL
 -- ============================================
 SELECT 
     epr.eprice_id,
@@ -548,7 +548,7 @@ JOIN EQUIPMENT e ON epr.equip_id = e.equip_id
 ORDER BY rp.plan_id, epr.equip_id, epr.affiliation;
 
 -- ============================================
--- 5.2 查看特定費率版本的設備加價規則
+-- 5.2 查看特定費率版本的設備加價規則  ACTION: SEARCH_EQUIP_PRICE_RULE_BY_VERSION
 -- ============================================
 SELECT 
     epr.eprice_id,
@@ -564,7 +564,7 @@ WHERE epr.version_id = @version_id  -- 替換為實際的版本ID
 ORDER BY epr.equip_id, epr.affiliation;
 
 -- ============================================
--- 5.3 查看特定場地的設備加價規則（當前有效版本）
+-- 5.3 查看特定場地的設備加價規則（當前有效版本）  ACTION: SEARCH_EQUIP_PRICE_RULE_BY_VENUE
 -- ============================================
 SELECT 
     epr.eprice_id,
@@ -585,7 +585,7 @@ WHERE rp.venue_id = @venue_id  -- 替換為實際的場地ID
 ORDER BY epr.equip_id, epr.affiliation;
 
 -- ============================================
--- 5.4 建立設備加價規則
+-- 5.4 建立設備加價規則  ACTION: ADD_EQUIP_PRICE_RULE
 -- ============================================
 -- 參數說明：
 --   @version_id: 版本ID
@@ -627,7 +627,7 @@ INSERT INTO EQUIP_PRICE_RULE (
 -- );
 
 -- ============================================
--- 5.5 更新設備加價規則
+-- 5.5 更新設備加價規則  ACTION: UPDATE_EQUIP_PRICE_RULE
 -- ============================================
 -- 參數說明：
 --   @eprice_id: 規則ID
@@ -647,7 +647,7 @@ WHERE eprice_id = @eprice_id;  -- 替換為實際的規則ID
 -- WHERE eprice_id = 1;
 
 -- ============================================
--- 5.6 刪除設備加價規則
+-- 5.6 刪除設備加價規則  ACTION: DELETE_EQUIP_PRICE_RULE
 -- ============================================
 -- DELETE FROM EQUIP_PRICE_RULE
 -- WHERE eprice_id = @eprice_id;  -- 替換為實際的規則ID

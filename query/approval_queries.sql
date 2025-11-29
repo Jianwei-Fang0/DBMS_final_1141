@@ -9,7 +9,7 @@
 -- ============================================
 
 -- ============================================
--- 1. 查詢待審核的申請（基本查詢）
+-- 1. 查詢待審核的申請（基本查詢）                   SEARCH_PENDING
 -- ============================================
 SELECT * 
 FROM BOOKING 
@@ -17,7 +17,7 @@ WHERE status = 'Pending'
 ORDER BY created_at ASC;
 
 -- ============================================
--- 2. 查詢待審核申請（詳細資訊，包含申請人、場地等）
+-- 2. 查詢待審核申請（詳細資訊，包含申請人、場地等） SEARCH_PENDING_DETAIL
 -- ============================================
 SELECT 
     b.booking_id,
@@ -41,7 +41,7 @@ WHERE b.status = 'Pending'
 ORDER BY b.created_at ASC;
 
 -- ============================================
--- 3. 查看特定申請的審核歷史
+-- 3. 查看特定申請的審核歷史   SEARCH_PENDING_HISTORY
 -- ============================================
 SELECT 
     a.approval_id,
@@ -56,7 +56,7 @@ WHERE a.booking_id = 2  -- 替換為實際的 booking_id
 ORDER BY a.step ASC, a.decided_at ASC;
 
 -- ============================================
--- 實用查詢：查看特定申請的完整資訊 or 特定id
+-- 實用查詢：查看特定申請的完整資訊 or 特定id SEARCH_PENDING_DETAIL
 -- ============================================
 SELECT 
     b.booking_id,
@@ -83,8 +83,7 @@ JOIN BUILDING bv ON v.building_id = bv.building_id
 WHERE b.booking_id = 2;  -- 替換為實際的 booking_id
 
 -- ============================================
--- ============================================
--- 4 審核通過
+-- 4 審核通过 approve_PENDING
 -- ============================================
 -- 這個範例展示完整的審核通過流程，包含所有步驟
 BEGIN;
@@ -168,7 +167,7 @@ COMMIT;
 -- 如果有錯誤，回滾
 -- ROLLBACK;
 -- ============================================
--- 5. 審核拒絕（Rejected）
+-- 5. 審核拒絕（Rejected）  REJECT_PENDING
 -- ============================================
 BEGIN;
 
@@ -204,7 +203,7 @@ COMMIT;
 
 
 -- ============================================
--- 7. 多關卡審核範例（如果需要多層審核）
+-- 7. 多關卡審核範例（如果需要多層審核） MULTI_APPROVAL
 -- ============================================
 -- 第一關審核通過
 BEGIN;
@@ -260,7 +259,9 @@ INSERT INTO APPROVAL (
     NOW()
 );
 
--- 鎖定時段
+-- ============================================
+-- 8. 鎖定時段 ADD_BLOCKED_SLOT
+-- ============================================
 INSERT INTO BLOCKED_SLOT (
     block_id,
     venue_id,
@@ -279,7 +280,10 @@ SELECT
 FROM BOOKING
 WHERE booking_id = 3;
 
--- 建立 BOOKING_SLOT 切片（時段切段）
+-- ============================================
+-- 9. 建立 BOOKING_SLOT 切片（時段切段） ADD_BOOKING_SLOT
+-- ============================================
+
 INSERT INTO BOOKING_SLOT (booking_id, venue_id, slot_start)
 SELECT 
     b.booking_id,
@@ -308,7 +312,7 @@ WHERE b.booking_id = 3;
 COMMIT;
 
 -- ============================================
--- 8. 查詢所有審核狀態的申請（管理員總覽）
+-- 10. 查詢所有審核狀態的申請（管理員總覽） SEARCH_ALL_BOOKING_PROCESS
 -- ============================================
 SELECT 
     b.booking_id,
@@ -337,27 +341,27 @@ ORDER BY b.created_at DESC;
 -- ============================================
 
 -- ============================================
--- -- 6. 檢查申請人是否在黑名單中
+-- -- 11. 查詢某人黑名單 CHECK_BLACKLIST
 -- -- ============================================
--- -- 注意：如果系統有黑名單表，請替換為實際的表名
--- -- 假設黑名單表結構：BLACKLIST (user_id, reason, blocked_until, status)
--- SELECT 
---     b.booking_id,
---     u.user_id,
---     u.name AS applicant_name,
---     u.email AS applicant_email,
---     CASE 
---         WHEN bl.user_id IS NOT NULL THEN '在黑名單中'
---         ELSE '不在黑名單中'
---     END AS blacklist_status,
---     bl.reason AS blacklist_reason,
---     bl.blocked_until
--- FROM BOOKING b
--- JOIN "USER" u ON b.user_id = u.user_id
--- LEFT JOIN BLACKLIST bl ON u.user_id = bl.user_id 
---     AND (bl.blocked_until IS NULL OR bl.blocked_until > CURRENT_DATE)
---     AND bl.status = 'Active'
--- WHERE b.booking_id = 2;  -- 替換為實際的 booking_id
+-- 注意：如果系統有黑名單表，請替換為實際的表名
+-- 假設黑名單表結構：BLACKLIST (user_id, reason, blocked_until, status)
+SELECT 
+    b.booking_id,
+    u.user_id,
+    u.name AS applicant_name,
+    u.email AS applicant_email,
+    CASE 
+        WHEN bl.user_id IS NOT NULL THEN '在黑名單中'
+        ELSE '不在黑名單中'
+    END AS blacklist_status,
+    bl.reason AS blacklist_reason,
+    bl.blocked_until
+FROM BOOKING b
+JOIN "USER" u ON b.user_id = u.user_id
+LEFT JOIN BLACKLIST bl ON u.user_id = bl.user_id 
+    AND (bl.blocked_until IS NULL OR bl.blocked_until > CURRENT_DATE)
+    AND bl.status = 'Active'
+WHERE b.booking_id = 2;  -- 替換為實際的 booking_id
 
 -- -- ============================================
 -- -- 7. 檢查申請人的違規紀錄
@@ -377,7 +381,7 @@ ORDER BY b.created_at DESC;
 -- GROUP BY b.booking_id, u.user_id, u.name;
 
 -- ============================================
--- 8. 檢查場地規範（容量、開放狀態、設備需求）應該是 客戶端那邊就要檢查
+-- 11. 檢查場地規範（容量、開放狀態、設備需求） CHECK_VENUE_SPECIFICATION
 -- ============================================
 SELECT 
     b.booking_id,
@@ -399,7 +403,7 @@ JOIN VENUE v ON b.venue_id = v.venue_id
 WHERE b.booking_id = 2;  -- 替換為實際的 booking_id
 
 -- ============================================
--- 9. 檢查時段衝突（與已核准的預約和保留時段） 
+-- 12. 檢查時段衝突（與已核准的預約和保留時段） CHECK_TIME_CONFLICT
 -- ============================================
 SELECT 
     b.booking_id,
@@ -434,7 +438,7 @@ WHERE b.booking_id = 2  -- 替換為實際的 booking_id
 GROUP BY b.booking_id, b.venue_id, b.date, b.start_time, b.end_time;
 
 -- ============================================
--- 10. 檢查場地開放時間規則
+-- 13. 檢查場地開放時間規則 CHECK_TIME_RULE
 -- ============================================
 SELECT 
     b.booking_id,
@@ -457,7 +461,7 @@ LEFT JOIN TIMESLOT_RULE tr ON
 WHERE b.booking_id = 2;  -- 替換為實際的 booking_id
 
 -- ============================================
--- 11. 檢查設備需求是否滿足
+-- 14. 檢查設備需求是否滿足 CHECK_EQUIPMENT_REQUIREMENT
 -- ============================================
 SELECT 
     be.booking_id,
@@ -478,7 +482,7 @@ LEFT JOIN VENUE_EQUIP ve ON
 WHERE be.booking_id = 2;  -- 替換為實際的 booking_id
 
 -- ============================================
--- 12. 綜合審核檢查（所有檢查項目彙總）
+-- 15. 綜合審核檢查（所有檢查項目彙總） COMPREHENSIVE_APPROVAL_CHECK
 -- ============================================
 SELECT 
     b.booking_id,
