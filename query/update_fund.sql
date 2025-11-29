@@ -6,7 +6,7 @@
 -- ============================================
 
 -- ============================================
--- 方法1：根據付款ID標記付款成功（推薦）
+-- 方法1：根據付款ID標記付款成功（推薦） UPDATE_PAYMENT_STATUS_TO_SUCCEEDED
 -- ============================================
 -- 使用方式：將 @payment_id 替換為實際的付款ID
 UPDATE PAYMENT
@@ -17,7 +17,7 @@ WHERE payment_id = @payment_id  -- 替換為實際的付款ID，例如：WHERE p
 
 
 -- ============================================
--- 查詢：查看待付款記錄（用於確認）
+-- 查詢：查看待付款記錄（用於確認）  ACTION: SEARCH_PENDING_PAYMENT
 -- ============================================
 -- 查看所有待付款記錄
 SELECT 
@@ -37,7 +37,7 @@ WHERE p.status = 'Pending'
 ORDER BY p.created_at ASC;
 
 -- ============================================
--- 建立退款記錄
+-- 建立退款記錄  ACTION: ADD_REFUND
 -- ============================================
 -- 使用方式：將 @payment_id, @amount, @reason 替換為實際值
 INSERT INTO REFUND (
@@ -57,9 +57,10 @@ INSERT INTO REFUND (
 );
 
 
+-- 依退款結果更新付款狀態（預留）  ACTION: UPDATE_PAYMENT_STATUS_BY_REFUND
 UPDATE PAYMENT
 SET status = 'Succeeded'
-WHERE refund_id = @refund_id  -- 替換為實際的付款ID，例如：WHERE payment_id = 3
+WHERE refund_id = @refund_id  -- 替換為實際的退款ID
   AND status = 'Pending';  -- 只更新待付款的記錄，避免重複更新
 
 
