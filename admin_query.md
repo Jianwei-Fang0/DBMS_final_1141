@@ -7,7 +7,7 @@
 允許 → APPROVE
 拒絕 → REJECT
 更新 → UPDATE
-
+檢查 → CHECK
 
 ## 關聯式資料庫 Query 一覽
 
