@@ -5,7 +5,7 @@
 import os
 from dotenv import load_dotenv
 from pymongo import MongoClient
-from mongodb_operation_logs import log_operation, create_timeseries_collection
+from app.db.mongodb_operation_logs import log_operation, create_timeseries_collection
 from datetime import datetime, timedelta
 from random import randint
 

@@ -1,0 +1,6 @@
+fastapi
+uvicorn[standard]
+psycopg[binary]   # psycopg3
+pymongo
+python-dotenv
+pydantic
