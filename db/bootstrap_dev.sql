@@ -24,9 +24,9 @@ SET client_encoding TO 'UTF8';
 -- ✅ 放“已改成只用 BOOKING_SLOT、不寫 BLOCKED_SLOT”的核准/拒絕/補件版本
 \i app/queries/admin/approval_queries.sql
 \i app/queries/admin/booking_modification.sql
-\i app/queries/admin/black_list.sql
-\i app/queries/admin/set_rule.sql
-\i app/queries/admin/update_fund.sql
+-- \i app/queries/admin/black_list.sql
+-- \i app/queries/admin/set_rule.sql
+-- \i app/queries/admin/update_fund.sql
 -- ⚠️ set_rule.sql 有 @param 的樣板別在這裡 \i；改由你的後端 API 注入參數執行。
 
 \echo '== 檢查關鍵物件存在性...'

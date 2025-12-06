@@ -1,0 +1,138 @@
+                                                                                                                                                                          QUERY PLAN                                                                                                                                                                          
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort  (cost=2571.80..2571.81 rows=2 width=137) (actual time=6.717..6.729 rows=30 loops=1)
+   Sort Key: v.capacity, v.name
+   Sort Method: quicksort  Memory: 27kB
+   Buffers: shared hit=1119 read=96
+   CTE ctx
+     ->  Result  (cost=0.00..0.01 rows=1 width=64) (actual time=0.001..0.001 rows=1 loops=1)
+   CTE wanted_slots
+     ->  Function Scan on generate_series g  (cost=0.10..27.60 rows=1000 width=8) (actual time=0.015..0.018 rows=4 loops=1)
+           InitPlan 2
+             ->  CTE Scan on ctx ctx_1  (cost=0.00..0.02 rows=1 width=4) (actual time=0.000..0.000 rows=1 loops=1)
+           InitPlan 3
+             ->  CTE Scan on ctx ctx_2  (cost=0.00..0.02 rows=1 width=8) (actual time=0.000..0.000 rows=1 loops=1)
+           InitPlan 4
+             ->  CTE Scan on ctx ctx_3  (cost=0.00..0.02 rows=1 width=8) (actual time=0.000..0.001 rows=1 loops=1)
+           InitPlan 5
+             ->  CTE Scan on ctx ctx_4  (cost=0.00..0.02 rows=1 width=8) (actual time=0.000..0.001 rows=1 loops=1)
+   InitPlan 7
+     ->  CTE Scan on ctx ctx_5  (cost=0.00..0.02 rows=1 width=4) (actual time=0.001..0.001 rows=1 loops=1)
+   InitPlan 8
+     ->  CTE Scan on ctx ctx_6  (cost=0.00..0.02 rows=1 width=8) (actual time=0.000..0.001 rows=1 loops=1)
+   InitPlan 9
+     ->  CTE Scan on ctx ctx_7  (cost=0.00..0.02 rows=1 width=8) (actual time=0.000..0.000 rows=1 loops=1)
+   InitPlan 10
+     ->  CTE Scan on ctx ctx_8  (cost=0.00..0.02 rows=1 width=8) (never executed)
+   InitPlan 11
+     ->  CTE Scan on ctx ctx_9  (cost=0.00..0.02 rows=1 width=8) (never executed)
+   InitPlan 12
+     ->  CTE Scan on ctx ctx_10  (cost=0.00..0.02 rows=1 width=4) (actual time=0.000..0.000 rows=1 loops=1)
+   InitPlan 13
+     ->  CTE Scan on ctx ctx_11  (cost=0.00..0.02 rows=1 width=4) (actual time=0.000..0.000 rows=1 loops=1)
+   InitPlan 14
+     ->  CTE Scan on ctx ctx_12  (cost=0.00..0.02 rows=1 width=4) (never executed)
+   InitPlan 15
+     ->  CTE Scan on ctx ctx_13  (cost=0.00..0.02 rows=1 width=32) (actual time=0.000..0.001 rows=1 loops=1)
+   InitPlan 16
+     ->  CTE Scan on ctx ctx_14  (cost=0.00..0.02 rows=1 width=32) (never executed)
+   InitPlan 17
+     ->  CTE Scan on ctx ctx_15  (cost=0.00..0.02 rows=1 width=4) (never executed)
+   InitPlan 18
+     ->  CTE Scan on ctx ctx_16  (cost=0.00..0.02 rows=1 width=8) (never executed)
+   InitPlan 19
+     ->  CTE Scan on ctx ctx_17  (cost=0.00..0.02 rows=1 width=8) (never executed)
+   ->  GroupAggregate  (cost=2543.87..2543.92 rows=2 width=137) (actual time=6.658..6.679 rows=30 loops=1)
+         Group Key: v.venue_id
+         Buffers: shared hit=1119 read=96
+         ->  Sort  (cost=2543.87..2543.87 rows=2 width=235) (actual time=6.646..6.652 rows=30 loops=1)
+               Sort Key: v.venue_id, e.name
+               Sort Method: quicksort  Memory: 26kB
+               Buffers: shared hit=1119 read=96
+               ->  Nested Loop Left Join  (cost=0.15..2543.86 rows=2 width=235) (actual time=0.262..6.618 rows=30 loops=1)
+                     Join Filter: ((pr.version_id = rv.version_id) AND ((pr.day_type)::text = (COALESCE(h.day_type, 'Weekday'::character varying))::text))
+                     Buffers: shared hit=1119 read=96
+                     ->  Nested Loop Left Join  (cost=0.15..2543.83 rows=2 width=265) (actual time=0.257..6.500 rows=30 loops=1)
+                           Buffers: shared hit=1119 read=96
+                           ->  Nested Loop  (cost=0.15..2543.81 rows=2 width=227) (actual time=0.253..6.304 rows=30 loops=1)
+                                 Buffers: shared hit=1119 read=96
+                                 ->  CTE Scan on ctx  (cost=0.00..0.02 rows=1 width=0) (actual time=0.003..0.004 rows=1 loops=1)
+                                 ->  Nested Loop Left Join  (cost=0.15..2543.77 rows=2 width=227) (actual time=0.249..6.292 rows=30 loops=1)
+                                       Join Filter: (ve.venue_id = v.venue_id)
+                                       Buffers: shared hit=1119 read=96
+                                       ->  Nested Loop Left Join  (cost=0.15..2543.72 rows=2 width=49) (actual time=0.241..6.271 rows=30 loops=1)
+                                             Join Filter: (rp.venue_id = v.venue_id)
+                                             Rows Removed by Join Filter: 30
+                                             Buffers: shared hit=1119 read=96
+                                             ->  Nested Loop  (cost=0.15..2541.66 rows=2 width=41) (actual time=0.218..6.225 rows=30 loops=1)
+                                                   Buffers: shared hit=1117 read=96
+                                                   ->  Seq Scan on timeslot_rule r  (cost=0.00..24.50 rows=50 width=8) (actual time=0.021..0.177 rows=100 loops=1)
+                                                         Filter: ((weekday = (InitPlan 7).col1) AND CASE WHEN (open_time <= close_time) THEN (((InitPlan 8).col1 >= open_time) AND ((InitPlan 9).col1 <= close_time)) ELSE (((InitPlan 10).col1 >= open_time) OR ((InitPlan 11).col1 <= close_time)) END)
+                                                         Rows Removed by Filter: 600
+                                                         Buffers: shared hit=7
+                                                   ->  Memoize  (cost=0.15..62.59 rows=1 width=41) (actual time=0.060..0.060 rows=0 loops=100)
+                                                         Cache Key: r.venue_id
+                                                         Cache Mode: logical
+                                                         Hits: 0  Misses: 100  Evictions: 0  Overflows: 0  Memory Usage: 10kB
+                                                         Buffers: shared hit=1110 read=96
+                                                         ->  Index Scan using venue_pkey on venue v  (cost=0.14..62.58 rows=1 width=41) (actual time=0.058..0.058 rows=0 loops=100)
+                                                               Index Cond: (venue_id = r.venue_id)
+                                                               Filter: ((capacity >= (InitPlan 12).col1) AND (((InitPlan 13).col1 IS NULL) OR (building_id = (InitPlan 14).col1)) AND (((InitPlan 15).col1 IS NULL) OR ((type)::text = (InitPlan 16).col1)) AND ((open_status)::text = 'On'::text) AND (NOT EXISTS(SubPlan 25)) AND (NOT EXISTS(SubPlan 20)))
+                                                               Rows Removed by Filter: 1
+                                                               Buffers: shared hit=1110 read=96
+                                                               SubPlan 25
+                                                                 ->  Nested Loop  (cost=0.36..44.38 rows=5 width=0) (actual time=0.006..0.006 rows=0 loops=81)
+                                                                       Join Filter: (ws_1.slot_start = ((((InitPlan 24).col1)::timestamp without time zone)::date + blocked_slot.start_time))
+                                                                       Buffers: shared hit=153 read=9
+                                                                       InitPlan 21
+                                                                         ->  CTE Scan on ctx ctx_18  (cost=0.00..0.02 rows=1 width=4) (actual time=0.000..0.000 rows=1 loops=1)
+                                                                       InitPlan 22
+                                                                         ->  CTE Scan on ctx ctx_19  (cost=0.00..0.02 rows=1 width=8) (actual time=0.000..0.000 rows=1 loops=1)
+                                                                       InitPlan 23
+                                                                         ->  CTE Scan on ctx ctx_20  (cost=0.00..0.02 rows=1 width=8) (actual time=0.000..0.000 rows=1 loops=1)
+                                                                       InitPlan 24
+                                                                         ->  CTE Scan on ctx ctx_21  (cost=0.00..0.02 rows=1 width=4) (never executed)
+                                                                       ->  Index Only Scan using idx_blocked_slot_venue_date_time on blocked_slot  (cost=0.28..4.30 rows=1 width=8) (actual time=0.005..0.005 rows=0 loops=81)
+                                                                             Index Cond: ((venue_id = v.venue_id) AND (date = (InitPlan 21).col1) AND (start_time < (InitPlan 23).col1) AND (end_time > (InitPlan 22).col1))
+                                                                             Heap Fetches: 0
+                                                                             Buffers: shared hit=153 read=9
+                                                                       ->  CTE Scan on wanted_slots ws_1  (cost=0.00..20.00 rows=1000 width=8) (never executed)
+                                                               SubPlan 20
+                                                                 ->  Nested Loop  (cost=0.71..7270.40 rows=139 width=0) (actual time=0.063..0.063 rows=1 loops=81)
+                                                                       Buffers: shared hit=757 read=87
+                                                                       ->  Nested Loop  (cost=0.42..5996.00 rows=460 width=8) (actual time=0.056..0.056 rows=1 loops=81)
+                                                                             Buffers: shared hit=565 read=87
+                                                                             ->  CTE Scan on wanted_slots ws  (cost=0.00..20.00 rows=1000 width=8) (actual time=0.000..0.001 rows=2 loops=81)
+                                                                             ->  Index Scan using uq_booking_slot_venue_slot on booking_slot bs  (cost=0.42..5.98 rows=1 width=16) (actual time=0.022..0.022 rows=0 loops=196)
+                                                                                   Index Cond: ((venue_id = v.venue_id) AND (slot_start = ws.slot_start))
+                                                                                   Buffers: shared hit=565 read=87
+                                                                       ->  Index Scan using booking_pkey on booking b  (cost=0.29..2.77 rows=1 width=8) (actual time=0.007..0.007 rows=1 loops=64)
+                                                                             Index Cond: (booking_id = bs.booking_id)
+                                                                             Filter: (((status)::text = ANY ('{Pending,Approved}'::text[])) AND (COALESCE((hold_until)::timestamp with time zone, (now() + '100 years'::interval)) >= now()))
+                                                                             Rows Removed by Filter: 0
+                                                                             Buffers: shared hit=192
+                                             ->  Materialize  (cost=0.00..2.04 rows=1 width=16) (actual time=0.001..0.001 rows=1 loops=30)
+                                                   Buffers: shared hit=2
+                                                   ->  Nested Loop Left Join  (cost=0.00..2.04 rows=1 width=16) (actual time=0.015..0.016 rows=1 loops=1)
+                                                         Join Filter: (rv.plan_id = rp.plan_id)
+                                                         Buffers: shared hit=2
+                                                         ->  Seq Scan on rate_plan rp  (cost=0.00..1.01 rows=1 width=16) (actual time=0.008..0.008 rows=1 loops=1)
+                                                               Filter: ((status)::text = 'On'::text)
+                                                               Buffers: shared hit=1
+                                                         ->  Seq Scan on rate_version rv  (cost=0.00..1.01 rows=1 width=16) (actual time=0.006..0.006 rows=1 loops=1)
+                                                               Buffers: shared hit=1
+                                       ->  Materialize  (cost=0.00..0.02 rows=1 width=186) (actual time=0.000..0.000 rows=0 loops=30)
+                                             ->  Nested Loop Left Join  (cost=0.00..0.01 rows=1 width=186) (actual time=0.004..0.004 rows=0 loops=1)
+                                                   Join Filter: (e.equip_id = ve.equip_id)
+                                                   ->  Seq Scan on venue_equip ve  (cost=0.00..0.00 rows=1 width=16) (actual time=0.004..0.004 rows=0 loops=1)
+                                                   ->  Seq Scan on equipment e  (cost=0.00..0.00 rows=1 width=186) (never executed)
+                           ->  Seq Scan on holiday h  (cost=0.00..0.00 rows=1 width=38) (actual time=0.000..0.000 rows=0 loops=30)
+                                 Filter: (date = (InitPlan 17).col1)
+                     ->  Seq Scan on price_rule pr  (cost=0.00..0.00 rows=1 width=62) (actual time=0.000..0.000 rows=0 loops=30)
+                           Filter: (((InitPlan 18).col1 < end_time) AND ((InitPlan 19).col1 > start_time))
+ Planning:
+   Buffers: shared hit=84 read=4
+ Planning Time: 2.276 ms
+ Execution Time: 7.014 ms
+(134 µ§¸ê®Æ)
+
