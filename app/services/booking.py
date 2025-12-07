@@ -38,7 +38,7 @@ def search_availability(
         venue_type,
     )
 
-    with get_conn() as conn, conn.cursor(row_factory=dict_row) as cur:
+    with get_conn() as conn, conn.cursor(row_factory=dict_row) as cur:  ##讀postgres的資料
         cur.execute(sql, params)
         rows = cur.fetchall()
     return list(rows)

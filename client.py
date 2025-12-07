@@ -65,7 +65,7 @@ def action_search_availability(user_id: int):
         print("此時段沒有可借場地。")
         return
 
-    print(f"\n查詢結果（共 {len(data)} 筆）：")
+    print(f"\n查詢結果（共 {len(data)} 筆）：")   ## 讀
     for row in data:
         venue_id = row.get("venue_id")
         name = row.get("name") or row.get("venue_name")
