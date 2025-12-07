@@ -179,8 +179,17 @@ def action_list_pending_bookings(admin_id: int, operator: Optional[str] = None):
             print(f"    用途: {b.get('purpose', 'N/A')}")
             print(f"    日期: {b.get('date', 'N/A')} {b.get('start_time', 'N/A')}-{b.get('end_time', 'N/A')}")
             print(f"    人數: {b.get('people', 'N/A')}")
-            print(f"    預估金額: ${b.get('amount_est', 0):.2f}")
-            print(f"    押金: ${b.get('deposit', 0):.2f}")
+            # 安全處理金額格式化（可能是字符串或數字）
+            amount_est = b.get('amount_est', 0)
+            deposit = b.get('deposit', 0)
+            try:
+                amount_est = float(amount_est) if amount_est not in (None, 'N/A', '') else 0
+                deposit = float(deposit) if deposit not in (None, 'N/A', '') else 0
+                print(f"    預估金額: ${amount_est:.2f}")
+                print(f"    押金: ${deposit:.2f}")
+            except (ValueError, TypeError):
+                print(f"    預估金額: {amount_est}")
+                print(f"    押金: {deposit}")
             print(f"    建立時間: {b.get('created_at', 'N/A')}")
         
         return data
@@ -189,9 +198,10 @@ def action_list_pending_bookings(admin_id: int, operator: Optional[str] = None):
         return None
 
 
-def action_get_booking_preview(admin_id: int, operator: Optional[str] = None):
+def action_get_booking_preview(admin_id: int, operator: Optional[str] = None, page: Optional[int] = None):
     """查看訂單預覽（分頁）"""
-    page = input_int("請輸入頁數（預設 1）: ", min_value=1) or 1
+    if page is None:
+        page = input_int("請輸入頁數（預設 1）: ", min_value=1) or 1
     if page is None:
         page = 1
     
@@ -237,8 +247,17 @@ def action_get_booking_preview(admin_id: int, operator: Optional[str] = None):
             print(f"    日期: {b.get('date', 'N/A')} {b.get('start_time', 'N/A')}-{b.get('end_time', 'N/A')}")
             print(f"    人數: {b.get('people', 'N/A')}")
             print(f"    狀態: {b.get('status', 'N/A')}")
-            print(f"    預估金額: ${b.get('amount_est', 0):.2f}")
-            print(f"    押金: ${b.get('deposit', 0):.2f}")
+            # 安全處理金額格式化（可能是字符串或數字）
+            amount_est = b.get('amount_est', 0)
+            deposit = b.get('deposit', 0)
+            try:
+                amount_est = float(amount_est) if amount_est not in (None, 'N/A', '') else 0
+                deposit = float(deposit) if deposit not in (None, 'N/A', '') else 0
+                print(f"    預估金額: ${amount_est:.2f}")
+                print(f"    押金: ${deposit:.2f}")
+            except (ValueError, TypeError):
+                print(f"    預估金額: {amount_est}")
+                print(f"    押金: {deposit}")
         
         print(f"\n分頁資訊: 第 {pagination.get('page', 1)} 頁 / 共 {pagination.get('total_pages', 1)} 頁")
         print(f"顯示 {len(bookings)} 筆，總共 {pagination.get('total', 0)} 筆")
@@ -249,9 +268,10 @@ def action_get_booking_preview(admin_id: int, operator: Optional[str] = None):
         return None
 
 
-def action_get_booking_detail(admin_id: int, operator: Optional[str] = None):
+def action_get_booking_detail(admin_id: int, operator: Optional[str] = None, booking_id: Optional[int] = None):
     """查看訂單詳情"""
-    booking_id = input_int("請輸入訂單 ID: ")
+    if booking_id is None:
+        booking_id = input_int("請輸入訂單 ID: ")
     if booking_id is None:
         return None
     
@@ -290,8 +310,17 @@ def action_get_booking_detail(admin_id: int, operator: Optional[str] = None):
         print(f"時間: {detail.get('start_time', 'N/A')} - {detail.get('end_time', 'N/A')}")
         print(f"人數: {detail.get('people', 'N/A')}")
         print(f"狀態: {detail.get('status', 'N/A')}")
-        print(f"預估金額: ${detail.get('amount_est', 0):.2f}")
-        print(f"押金: ${detail.get('deposit', 0):.2f}")
+        # 安全處理金額格式化（可能是字符串或數字）
+        amount_est = detail.get('amount_est', 0)
+        deposit = detail.get('deposit', 0)
+        try:
+            amount_est = float(amount_est) if amount_est not in (None, 'N/A', '') else 0
+            deposit = float(deposit) if deposit not in (None, 'N/A', '') else 0
+            print(f"預估金額: ${amount_est:.2f}")
+            print(f"押金: ${deposit:.2f}")
+        except (ValueError, TypeError):
+            print(f"預估金額: {amount_est}")
+            print(f"押金: {deposit}")
         print(f"建立時間: {detail.get('booking_created_at', 'N/A')}")
         
         return detail
@@ -300,9 +329,10 @@ def action_get_booking_detail(admin_id: int, operator: Optional[str] = None):
         return None
 
 
-def action_approve_booking(admin_id: int, operator: Optional[str] = None):
+def action_approve_booking(admin_id: int, operator: Optional[str] = None, booking_id: Optional[int] = None):
     """核准訂單"""
-    booking_id = input_int("請輸入訂單 ID: ")
+    if booking_id is None:
+        booking_id = input_int("請輸入訂單 ID: ")
     if booking_id is None:
         return None
     
@@ -341,9 +371,10 @@ def action_approve_booking(admin_id: int, operator: Optional[str] = None):
         return None
 
 
-def action_reject_booking(admin_id: int, operator: Optional[str] = None):
+def action_reject_booking(admin_id: int, operator: Optional[str] = None, booking_id: Optional[int] = None):
     """駁回訂單"""
-    booking_id = input_int("請輸入訂單 ID: ")
+    if booking_id is None:
+        booking_id = input_int("請輸入訂單 ID: ")
     if booking_id is None:
         return None
     
@@ -383,9 +414,10 @@ def action_reject_booking(admin_id: int, operator: Optional[str] = None):
         return None
 
 
-def action_request_changes(admin_id: int, operator: Optional[str] = None):
+def action_request_changes(admin_id: int, operator: Optional[str] = None, booking_id: Optional[int] = None):
     """要求補件"""
-    booking_id = input_int("請輸入訂單 ID: ")
+    if booking_id is None:
+        booking_id = input_int("請輸入訂單 ID: ")
     if booking_id is None:
         return None
     
@@ -518,7 +550,13 @@ def action_list_pending_payments(admin_id: int, operator: Optional[str] = None):
             print(f"    場地: {p.get('venue_name', 'N/A')}")
             print(f"    用途: {p.get('purpose', 'N/A')}")
             print(f"    日期: {p.get('date', 'N/A')} {p.get('start_time', 'N/A')}-{p.get('end_time', 'N/A')}")
-            print(f"    金額: ${p.get('amount', 0):.2f}")
+            # 安全處理金額格式化
+            amount = p.get('amount', 0)
+            try:
+                amount = float(amount) if amount not in (None, 'N/A', '') else 0
+                print(f"    金額: ${amount:.2f}")
+            except (ValueError, TypeError):
+                print(f"    金額: {amount}")
             print(f"    付款方式: {p.get('method', 'N/A')}")
             print(f"    類型: {p.get('type', 'N/A')}")
             print(f"    建立時間: {p.get('created_at', 'N/A')}")
@@ -604,7 +642,13 @@ def action_create_refund(admin_id: int, operator: Optional[str] = None):
             print(f"\n✓ 退款已建立")
             print(f"  退款 ID: {refund.get('refund_id')}")
             print(f"  付款 ID: {refund.get('payment_id')}")
-            print(f"  金額: ${refund.get('amount', 0):.2f}")
+            # 安全處理金額格式化
+            amount = refund.get('amount', 0)
+            try:
+                amount = float(amount) if amount not in (None, 'N/A', '') else 0
+                print(f"  金額: ${amount:.2f}")
+            except (ValueError, TypeError):
+                print(f"  金額: {amount}")
             print(f"  原因: {refund.get('reason', '無')}")
             print(f"  狀態: {refund.get('status')}")
             return refund.get('refund_id')
@@ -893,7 +937,13 @@ def action_list_price_rules(admin_id: int, operator: Optional[str] = None):
             print(f"\n[{i}] 規則 ID: {r['rule_id']}")
             print(f"    方案: {r.get('plan_name', 'N/A')} (ID: {r['plan_id']})")
             print(f"    開始時間: {r.get('start_time', 'N/A')} - {r.get('end_time', 'N/A')}")
-            print(f"    價格: ${r.get('price_per_hour', 0):.2f} / 小時")
+            # 安全處理價格格式化
+            price = r.get('price_per_hour', 0)
+            try:
+                price = float(price) if price not in (None, 'N/A', '') else 0
+                print(f"    價格: ${price:.2f} / 小時")
+            except (ValueError, TypeError):
+                print(f"    價格: {price} / 小時")
         
         return rules
     except Exception as e:

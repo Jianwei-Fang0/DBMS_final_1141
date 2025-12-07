@@ -1,4 +1,71 @@
 # ntu-venue-booking 本地開發環境安裝
+
+
+## -1 懶人版快速部屬+測試
+
+- run setup.bat   自動開好mongo+postgresql+fastapi
+- 開另一個terminal cd main/ && .\main.py
+- admin email and password : user000@ntu.edu.tw && admin
+- user email and password : user001@ntu.edu.tw && user123
+
+- admin 操作手則
+  1. 查詢可借場地相關
+  2. 查詢訂單相關
+      1.  查看訂單預覽20則
+          1. 上一頁
+          2. 下一頁
+          0. 返回
+      2.  查看訂單詳情 用booking id
+  3. 待處理訂單
+      1.  待審清單
+          1. 查看訂單詳情 用booking id
+              1. 核准訂單
+              2. 駁回訂單
+              3. 要求補件
+          0. 返回
+      2. action_modify_booking
+  4. 付款及退款檢查
+      1. action_list_pending_payments
+      2. action_mark_payment_succeeded
+      3. action_create_refund
+      4. action_mark_refund_succeeded
+  5. 查看目前規則
+      1. 列出時段規則
+      2. 列出費率方案
+      3. 列出價格規則
+  6. 查看操作日誌
+      action_list_logs
+
+- user操作手則
+  1. 查詢可借場地
+      1. 根據日期查詢
+          - 輸入日期 (YYYY-MM-DD)
+          - 輸入開始時間 (HH:MM)
+          - 輸入結束時間 (HH:MM)
+          - 顯示該時間區間內可預約的場地與時段
+      2. 根據建築物查詢
+          - 輸入日期 (YYYY-MM-DD)
+          - 輸入建築物 ID (1-7)
+          - 輸入人數
+          - 輸入場地類型（可選）
+          - 顯示符合條件的可用場地
+  2. 建立預約
+      - 選擇場地 ID (1-7)
+      - 輸入日期 (YYYY-MM-DD)
+      - 輸入開始時間 (HH:MM)
+      - 輸入結束時間 (HH:MM)
+      - 輸入人數
+      - 系統顯示 booking_id 和預估金額
+  3. 查詢我的訂單
+      - 可選擇過濾狀態（Pending/Approved/Cancelled，或留空查全部）
+      - 顯示所有訂單列表，包含訂單詳情
+  4. 取消訂單
+      - 輸入要取消的訂單 ID
+      - 只能取消自己的訂單
+      - 只能取消 Pending 狀態的訂單
+  0. 登出
+ 
+
 ## 0. 前置需求
 
 請先安裝好以下工具：

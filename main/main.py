@@ -153,18 +153,31 @@ def login_user() -> Optional[dict]:
                         print(f"   錯誤資訊: {error_msg}")
                 else:
                     print(f"\n❌ 登入失敗: {error_detail}")
-            except Exception:
+            except Exception as parse_error:
                 # 如果無法解析 JSON，顯示原始響應
                 print(f"\n❌ 登入失敗 [HTTP {resp.status_code}]")
-                print(resp.text)
+                print(f"   無法解析錯誤訊息: {parse_error}")
+                if resp.text:
+                    print(f"   原始響應: {resp.text[:200]}")
+            
+            # 暫停讓用戶看清楚錯誤訊息
+            try:
+                input("\n按 Enter 繼續...")
+            except (KeyboardInterrupt, EOFError):
+                pass
             return None
         
         # 解析成功響應
         try:
             result = resp.json()
-        except ValueError:
+        except ValueError as e:
             print(f"\n❌ 無法解析伺服器響應")
+            print(f"   錯誤: {e}")
             print(f"   響應內容: {resp.text[:200]}")
+            try:
+                input("\n按 Enter 繼續...")
+            except (KeyboardInterrupt, EOFError):
+                pass
             return None
         
         # 檢查登入是否成功
@@ -184,25 +197,49 @@ def login_user() -> Optional[dict]:
             return result
         else:
             print("\n❌ 登入失敗：伺服器返回 success=false")
+            try:
+                input("\n按 Enter 繼續...")
+            except (KeyboardInterrupt, EOFError):
+                pass
             return None
             
     except requests.exceptions.ConnectionError:
         print(f"\n❌ 無法連接到後端伺服器: {BASE_URL}")
         print("💡 提示：請確認後端服務是否已啟動")
+        try:
+            input("\n按 Enter 繼續...")
+        except (KeyboardInterrupt, EOFError):
+            pass
         return None
     except requests.exceptions.Timeout:
         print(f"\n❌ 連線逾時：無法在 10 秒內連接到伺服器")
+        try:
+            input("\n按 Enter 繼續...")
+        except (KeyboardInterrupt, EOFError):
+            pass
         return None
     except requests.exceptions.RequestException as e:
         print(f"\n❌ 網路請求錯誤: {e}")
+        try:
+            input("\n按 Enter 繼續...")
+        except (KeyboardInterrupt, EOFError):
+            pass
         return None
     except ValueError as e:
         print(f"\n❌ 資料格式錯誤: {e}")
+        try:
+            input("\n按 Enter 繼續...")
+        except (KeyboardInterrupt, EOFError):
+            pass
         return None
     except Exception as e:
         print(f"\n❌ 登入時發生未預期的錯誤: {e}")
         import traceback
         traceback.print_exc()
+        try:
+            input("\n按 Enter 繼續...")
+        except (KeyboardInterrupt, EOFError):
+            pass
         return None
 
 
@@ -216,13 +253,13 @@ def select_identity():
     login_result = login_user()
     
     if login_result is None:
-        return (None, None)
+        return (None, None, None, None)
     
     # 根據 is_admin 判斷身份
     if login_result.get("is_admin"):
-        return ("admin", login_result.get("user_id"),login_result.get("name"), login_result)
+        return ("admin", login_result.get("user_id"), login_result.get("name"), login_result)
     else:
-        return ("user", login_result.get("user_id"),login_result.get("name"), login_result)
+        return ("user", login_result.get("user_id"), login_result.get("name"), login_result)
 
 
 # ===== 主函數 =====
@@ -260,7 +297,19 @@ def main():
             user_main_menu(user_id, name, login_info)
         elif identity == "admin":
             from main.admin_cli import admin_main_menu
-            admin_main_menu(user_id, name, login_info)
+            # admin_main_menu 只接受 admin_id 和 login_info 兩個參數
+            try:
+                admin_main_menu(user_id, login_info)
+            except TypeError as e:
+                print(f"\n❌ 參數錯誤: {e}")
+                print(f"   傳入的參數: user_id={user_id}, login_info={login_info}")
+                import traceback
+                traceback.print_exc()
+                try:
+                    input("\n按 Enter 結束程式...")
+                except (KeyboardInterrupt, EOFError):
+                    pass
+                sys.exit(1)
             
     except KeyboardInterrupt:
         print("\n\n程式已中斷")
@@ -269,6 +318,13 @@ def main():
         print(f"\n❌ 發生錯誤: {e}")
         import traceback
         traceback.print_exc()
+        print("\n" + "="*50)
+        print("錯誤詳情已顯示在上方")
+        print("="*50)
+        try:
+            input("\n按 Enter 結束程式...")
+        except (KeyboardInterrupt, EOFError):
+            pass
         sys.exit(1)
 
 

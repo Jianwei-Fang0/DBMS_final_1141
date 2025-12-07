@@ -241,8 +241,17 @@ def action_create_booking(user_id: int):
         dict: {"booking_id": int, "venue_id": int, "date": str, "start": str, "end": str, "people": int} 如果成功，None 如果失敗
     """
     print("\n=== 建立預約 ===")
+    print("====以下為大樓ID(1-7)及名稱:====\n")
+    print("1. 新生教學館 (XSH)")
+    print("2. 綜合教學館 (ZJG)")
+    print("3. 共同教學館 (GTLB)")
+    print("4. 博雅教學館 (BYH)")
+    print("5. 普通教學館 (PTLB)")
+    print("6. 第一學生活動中心 (SAC1)")
+    print("7. 第二學生活動中心 (SAC2)")
+
     try:
-        venue_id_str = input_nonempty("請輸入場地 ID: ")
+        venue_id_str = input_nonempty("請輸入場地 ID (1-7): ")
         venue_id = int(venue_id_str)
     except ValueError:
         print("[錯誤] 場地 ID 必須是整數")

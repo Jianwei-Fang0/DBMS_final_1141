@@ -90,7 +90,7 @@ def login(user_email: str, password: str) -> Dict[str, Any]:
     FROM "user" u
     LEFT JOIN org o ON u.org_id = o.org_id
     LEFT JOIN user_role ur ON u.user_id = ur.user_id
-    WHERE u.user_id = %s
+    WHERE u.email = %s
     GROUP BY u.user_id, u.email, u.password_hash, u.name, u.phone, 
              u.status, u.affiliation, u.org_id, o.name;
     """
@@ -100,7 +100,7 @@ def login(user_email: str, password: str) -> Dict[str, Any]:
         row = cur.fetchone()
         
         if row is None:
-            raise UserNotFoundError(f"使用者 ID {user_email} 不存在")
+            raise UserNotFoundError(f"使用者 email {user_email} 不存在")
         
         # 檢查帳號狀態
         if row["status"] == "Frozen":
