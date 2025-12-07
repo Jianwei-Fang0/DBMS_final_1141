@@ -93,6 +93,27 @@ def get_pending_bookings(
     return {"data": rows}
 
 
+# ==== 2-1. 訂單預覽（分頁） ====
+
+
+@router.get("/preview")
+def get_booking_preview(
+    page: int = 1,
+    limit: int = 20,
+    operator_id: Optional[int] = None,
+    operator: Optional[str] = None,
+    user_agent: Optional[str] = Header(default=None, alias="User-Agent"),
+) -> Dict[str, Any]:
+    result = admin_booking.get_booking_preview(
+        page=page,
+        limit=limit,
+        operator_id=operator_id,
+        operator=operator,
+        user_agent=user_agent,
+    )
+    return result
+
+
 # ==== 3. 單筆詳情 ====
 
 
@@ -103,17 +124,14 @@ def get_booking_detail(
     operator: Optional[str] = None,
     user_agent: Optional[str] = Header(default=None, alias="User-Agent"),
 ) -> Dict[str, Any]:
-    row = admin_booking.get_booking_detail(booking_id)
-    if row is None:
-        raise HTTPException(status_code=404, detail="Booking not found")
-
-    log(
-        action="SEARCH_PENDING_DETAIL",
+    row = admin_booking.get_booking_detail(
+        booking_id=booking_id,
         operator_id=operator_id,
         operator=operator,
-        detail={"booking_id": booking_id},
         user_agent=user_agent,
     )
+    if row is None:
+        raise HTTPException(status_code=404, detail="Booking not found")
 
     return {"data": row}
 

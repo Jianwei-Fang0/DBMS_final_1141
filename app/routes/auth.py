@@ -17,7 +17,7 @@ router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
 
 
 class LoginRequest(BaseModel):
-    user_id: int
+    user_email: str
     password: str
 
 
@@ -43,7 +43,7 @@ def login_endpoint(body: LoginRequest):
     根據 roles 判斷是否為管理員。
     """
     try:
-        result = login(user_id=body.user_id, password=body.password)
+        result = login(user_email=body.user_email, password=body.password)
         
         return LoginResponse(
             success=True,

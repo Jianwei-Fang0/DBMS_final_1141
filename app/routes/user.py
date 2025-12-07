@@ -4,6 +4,7 @@ from fastapi import APIRouter, Request, HTTPException, Query
 
 from app.services.booking import (
     search_availability,
+    search_availability_by_building,
     create_booking,
     list_user_bookings,
     cancel_booking,
@@ -32,6 +33,27 @@ def get_availability(
         p_people=people,
         building_id=building_id,
         venue_type=venue_type,
+    )
+    return {"data": rows}
+
+
+# === 1-2. 根據大樓查詢後7天可用場地 ===
+@router.get("/venues/availability/by-building")
+def get_availability_by_building(
+    date: str = Query(..., description="起始日期 YYYY-MM-DD"),
+    building_id: int = Query(..., description="大樓 ID（必需）"),
+    people: int | None = Query(None, description="人數（可選）"),
+    venue_type: str | None = Query(None, description="場地類型（可選）"),
+):
+    """
+    根據 building_id 和日期查詢後7天的可用場地
+    返回該大樓在指定日期開始的7天內所有可用場地及其可用日期
+    """
+    rows = search_availability_by_building(
+        p_date=date,
+        building_id=building_id,
+        p_people=people,
+        p_type=venue_type,
     )
     return {"data": rows}
 

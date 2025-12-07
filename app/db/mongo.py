@@ -91,6 +91,7 @@ def log(
     operator: Optional[str],
     detail: Dict[str, Any],
     user_agent: Optional[str] = None,
+    timestamp: Optional[datetime] = None,
 ) -> None:
     """
     專案內部統一呼叫這個：
@@ -105,8 +106,9 @@ def log(
             action=action,
             operator_id=operator_id or 0,
             operator=operator or "",
-            detail=detail,
             user_agent=user_agent,
+            detail=detail,
+            timestamp=timestamp,
         )
     except Exception as e:
         # 這裡不要 raise，避免 booking / approval 因 log 壞掉

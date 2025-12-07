@@ -51,12 +51,12 @@ def verify_password(password: str, password_hash: str) -> bool:
         return False
 
 
-def login(user_id: int, password: str) -> Dict[str, Any]:
+def login(user_email: str, password: str) -> Dict[str, Any]:
     """
     使用者登入驗證
     
     Args:
-        user_id: 使用者 ID
+        user_email: 使用者 email
         password: 密碼（明文）
     
     Returns:
@@ -96,11 +96,11 @@ def login(user_id: int, password: str) -> Dict[str, Any]:
     """
     
     with get_conn() as conn, conn.cursor(row_factory=dict_row) as cur:
-        cur.execute(sql, (user_id,))
+        cur.execute(sql, (user_email,))
         row = cur.fetchone()
         
         if row is None:
-            raise UserNotFoundError(f"使用者 ID {user_id} 不存在")
+            raise UserNotFoundError(f"使用者 ID {user_email} 不存在")
         
         # 檢查帳號狀態
         if row["status"] == "Frozen":

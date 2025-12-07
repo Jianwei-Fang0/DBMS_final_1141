@@ -4,9 +4,8 @@ from typing import Any, Dict, List, Optional
 from psycopg.rows import dict_row
 
 from app.db.postgres import get_conn
-from app.db.mongo import log
 
-# === 1. 查可預約時段 ===
+# === 1. 查可預約時段 ===           if 只有日期 給該日期三天 if 只有日期加時間 給該時間開始的三天 
 def search_availability(
     p_date: str,
     p_start: str,
@@ -43,6 +42,36 @@ def search_availability(
         rows = cur.fetchall()
     return list(rows)
 
+def search_availability_by_building(
+    p_date: str,
+    building_id: int,
+    p_people: int | None = None,
+    p_type: str | None = None,
+) -> List[dict]:
+    """
+    根據 building_id 和日期查詢後7天的可用場地
+    呼叫 app/queries/user/search_availability_by_building.sql
+    參數：
+      p_date: 起始日期 (YYYY-MM-DD)
+      building_id: 大樓 ID（必需）
+      p_people: 人數（可選）
+      p_type: 場地類型（可選）
+    """
+    sql_path = "app/queries/user/search_availability_by_building.sql"
+    with open(sql_path, "r", encoding="utf-8") as f:
+        sql = f.read()
+
+    params = (
+        p_date,
+        building_id,
+        p_people,
+        p_type,
+    )
+
+    with get_conn() as conn, conn.cursor(row_factory=dict_row) as cur:
+        cur.execute(sql, params)
+        rows = cur.fetchall()
+    return list(rows)
 
 # === 2. 取 rate_version ===
 def get_rate_version(conn, venue_id: int, date_str: str) -> int:
@@ -137,8 +166,8 @@ def create_booking(
     user 建立預約：
       1) 算 rate_version + amount_est
       2) 呼叫 app/queries/user/create_booking.sql 插入一筆 BOOKING（status='Pending'）
-      3) 寫 Mongo log
-      4) 不切 BOOKING_SLOT，留給 admin approve_booking 處理
+      3) 不切 BOOKING_SLOT，留給 admin approve_booking 處理
+      注意：日誌記錄由 client 端處理
     """
     sql_path = "app/queries/user/create_booking.sql"
     with open(sql_path, "r", encoding="utf-8") as f:
@@ -180,41 +209,10 @@ def create_booking(
 
             conn.execute("COMMIT")
 
-            log(
-                "USER_CREATE_BOOKING",
-                user_id,
-                None,
-                {
-                    "booking_id": booking_id,
-                    "venue_id": venue_id,
-                    "date": date_str,
-                    "start": start_time,
-                    "end": end_time,
-                    "people": people,
-                    "affiliation": affiliation,
-                    "amount_est": float(amount_est),
-                },
-                ua,
-            )
             return {"booking_id": booking_id, "amount_est": float(amount_est)}
 
         except Exception as e:
             conn.execute("ROLLBACK")
-            log(
-                "USER_CREATE_BOOKING_FAILED",
-                user_id,
-                None,
-                {
-                    "venue_id": venue_id,
-                    "date": date_str,
-                    "start": start_time,
-                    "end": end_time,
-                    "people": people,
-                    "affiliation": affiliation,
-                    "error": str(e),
-                },
-                ua,
-            )
             raise
 
 def list_user_bookings(user_id: int, status: Optional[str] = None) -> list[dict]:
@@ -252,19 +250,7 @@ def list_user_bookings(user_id: int, status: Optional[str] = None) -> list[dict]
         cur.execute(sql, params)
         rows = cur.fetchall()
 
-    # Mongo log（可有可無，不影響主流程）
-    try:
-        log(
-            "USER_LIST_BOOKINGS",
-            user_id,
-            None,
-            {"user_id": user_id, "status": status},
-            None,
-        )
-    except Exception:
-        pass
-
-    return rows
+    return list(rows)
 
 class BookingNotFoundError(Exception):
     pass
@@ -320,24 +306,5 @@ def cancel_booking(booking_id: int, user_id: int, user_agent: str | None = None)
         )
 
         conn.commit()
-
-    # 寫 Mongo log
-    try:
-        log(
-            "USER_CANCEL_BOOKING",
-            user_id,
-            None,
-            {
-                "booking_id": booking_id,
-                "prev_status": row["status"],
-                "date": row["date"].isoformat(),
-                "start": row["start_time"].isoformat(),
-                "end": row["end_time"].isoformat(),
-            },
-            user_agent,
-        )
-    except Exception:
-        # 不讓 log 影響主流程
-        pass
 
     return {"booking_id": booking_id, "status": "Cancelled"}
