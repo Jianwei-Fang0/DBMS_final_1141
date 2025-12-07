@@ -3,6 +3,7 @@
 
 ## -1 懶人版快速部屬+測試
 
+- 改.envexample 成 .env
 - run setup.bat   自動開好mongo+postgresql+fastapi
 - 開另一個terminal cd main/ && .\main.py
 - admin email and password : user000@ntu.edu.tw && admin
