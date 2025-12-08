@@ -7,7 +7,6 @@ from fastapi import APIRouter, Header, HTTPException, status
 from pydantic import BaseModel
 
 from app.services import admin_fund
-from app.db.mongo import log
 
 router = APIRouter(prefix="/api/v1/admin/fund", tags=["admin-fund"])
 
@@ -28,13 +27,6 @@ def get_pending_payments(
 ) -> Dict[str, Any]:
     rows = admin_fund.list_pending_payments(limit=limit, offset=offset)
 
-    log(
-        action="SEARCH_PENDING_PAYMENT",
-        operator_id=operator_id,
-        operator=operator,
-        detail={"limit": limit, "offset": offset, "result_count": len(rows)},
-        user_agent=user_agent,
-    )
     return {"data": rows}
 
 
@@ -53,13 +45,6 @@ def mark_payment_succeeded(
             detail=result,
         )
 
-    log(
-        action="UPDATE_PAYMENT_STATUS_TO_SUCCEEDED",
-        operator_id=operator_id,
-        operator=operator,
-        detail={"payment_id": payment_id, "result": result},
-        user_agent=user_agent,
-    )
     return {"result": result}
 
 
@@ -82,13 +67,6 @@ def create_refund(
             detail=result,
         )
 
-    log(
-        action="ADD_REFUND",
-        operator_id=operator_id,
-        operator=operator,
-        detail={"body": body.model_dump(), "result": result},
-        user_agent=user_agent,
-    )
     return {"result": result}
 
 
@@ -107,11 +85,4 @@ def mark_refund_succeeded(
             detail=result,
         )
 
-    log(
-        action="UPDATE_PAYMENT_STATUS_BY_REFUND",
-        operator_id=operator_id,
-        operator=operator,
-        detail={"refund_id": refund_id, "result": result},
-        user_agent=user_agent,
-    )
     return {"result": result}

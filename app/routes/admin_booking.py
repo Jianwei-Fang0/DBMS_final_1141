@@ -7,7 +7,6 @@ from fastapi import APIRouter, HTTPException, Header, status
 from pydantic import BaseModel
 
 from app.services import admin_booking
-from app.db.mongo import log
 
 router = APIRouter(prefix="/api/v1/admin/bookings", tags=["admin-bookings"])
 
@@ -51,18 +50,6 @@ def get_booking_overview(
 ) -> Dict[str, Any]:
     rows = admin_booking.list_booking_overview(limit=limit, offset=offset)
 
-    log(
-        action="SEARCH_ALL_BOOKING_PROCESS",
-        operator_id=operator_id,
-        operator=operator,
-        detail={
-            "limit": limit,
-            "offset": offset,
-            "result_count": len(rows),
-        },
-        user_agent=user_agent,
-    )
-
     return {"data": rows}
 
 # ==== 2. 待審清單 ====
@@ -77,18 +64,6 @@ def get_pending_bookings(
     user_agent: Optional[str] = Header(default=None, alias="User-Agent"),
 ) -> Dict[str, Any]:
     rows = admin_booking.list_pending_bookings(limit=limit, offset=offset)
-
-    log(
-        action="SEARCH_PENDING",
-        operator_id=operator_id,
-        operator=operator,
-        detail={
-            "limit": limit,
-            "offset": offset,
-            "result_count": len(rows),
-        },
-        user_agent=user_agent,
-    )
 
     return {"data": rows}
 
@@ -113,6 +88,32 @@ def get_booking_preview(
     )
     return result
 
+@router.get("/preview/date")
+def get_booking_preview_by_date(
+    days: int = 7,
+    page: int = 1,
+    limit: int = 20,
+    operator_id: Optional[int] = None,
+    operator: Optional[str] = None,
+    user_agent: Optional[str] = Header(default=None, alias="User-Agent"),
+) -> Dict[str, Any]:
+    """
+    查詢從今天開始算指定天數內的訂單預覽列表
+    
+    Args:
+        days: 從今天開始算的天數（預設7天）
+        page: 頁碼（預設1）
+        limit: 每頁筆數（預設20）
+    """
+    result = admin_booking.get_booking_preview_by_date(
+        days=days,
+        page=page,
+        limit=limit,
+        operator_id=operator_id,
+        operator=operator,
+        user_agent=user_agent,
+    )
+    return result
 
 # ==== 3. 單筆詳情 ====
 
@@ -148,14 +149,6 @@ def get_booking_history(
 ) -> Dict[str, Any]:
     rows = admin_booking.get_booking_history(booking_id)
 
-    log(
-        action="SEARCH_PENDING_HISTORY",
-        operator_id=operator_id,
-        operator=operator,
-        detail={"booking_id": booking_id, "result_count": len(rows)},
-        user_agent=user_agent,
-    )
-
     return {"data": rows}
 
 
@@ -175,14 +168,6 @@ def check_booking(
             status_code=404,
             detail="Booking not found or not pending",
         )
-
-    log(
-        action="COMPREHENSIVE_APPROVAL_CHECK",
-        operator_id=operator_id,
-        operator=operator,
-        detail={"booking_id": booking_id, "result": row},
-        user_agent=user_agent,
-    )
 
     return {"data": row}
 
@@ -231,20 +216,6 @@ def approve_booking(
             },
         )
 
-    log(
-        action="APPROVE_PENDING",
-        operator_id=operator_id,
-        operator=operator,
-        detail={
-            "booking_id": booking_id,
-            "step": body.step,
-            "final": body.final,
-            "comment": body.comment,
-            "result": result,
-        },
-        user_agent=user_agent,
-    )
-
     return {"result": result}
 
 
@@ -269,19 +240,6 @@ def reject_booking(
     if not result.get("success", False):
         raise HTTPException(status_code=400, detail=result)
 
-    log(
-        action="REJECT_PENDING",
-        operator_id=operator_id,
-        operator=operator,
-        detail={
-            "booking_id": booking_id,
-            "step": body.step,
-            "comment": body.comment,
-            "result": result,
-        },
-        user_agent=user_agent,
-    )
-
     return {"result": result}
 
 
@@ -305,19 +263,6 @@ def request_changes(
 
     if not result.get("success", False):
         raise HTTPException(status_code=400, detail=result)
-
-    log(
-        action="REQUEST_CHANGES",
-        operator_id=operator_id,
-        operator=operator,
-        detail={
-            "booking_id": booking_id,
-            "step": body.step,
-            "comment": body.comment,
-            "result": result,
-        },
-        user_agent=user_agent,
-    )
 
     return {"result": result}
 
@@ -350,22 +295,6 @@ def modify_booking_endpoint(
                 "error": str(result.get("error", "")),
             },
         )
-
-    log(
-        action="BOOKING_MODIFY_FULL_FLOW",
-        operator_id=operator_id,
-        operator=operator,
-        detail={
-            "booking_id": booking_id,
-            "new_date": str(body.new_date),
-            "new_start_time": str(body.new_start_time),
-            "new_end_time": str(body.new_end_time),
-            "new_venue_id": body.new_venue_id,
-            "new_people": body.new_people,
-            "result": result,
-        },
-        user_agent=user_agent,
-    )
 
     return {"result": result}
 

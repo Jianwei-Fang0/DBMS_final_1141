@@ -10,6 +10,7 @@ from admin_client import (
     # Admin Booking
     action_list_pending_bookings,
     action_get_booking_preview,
+    action_get_booking_preview_by_date,
     action_get_booking_detail,
     action_approve_booking,
     action_reject_booking,
@@ -139,7 +140,8 @@ def admin_main_menu(admin_id: int, login_info: dict = None):
             while True:
                 print("\n=== 查詢訂單相關 ===")
                 print("1. 查看訂單預覽20則")
-                print("2. 查看訂單詳情（用booking id）")
+                print("2. 查看訂單預覽（從今天開始算指定天數內）")
+                print("3. 查看訂單詳情（用booking id）")
                 print("0. 返回上一頁")
                 choice2 = input("請選擇功能：").strip()
                 
@@ -189,6 +191,56 @@ def admin_main_menu(admin_id: int, login_info: dict = None):
                         else:
                             break
                 elif choice2 == "2":
+                    # 查看訂單預覽（從今天開始算指定天數內，支持分頁導航）
+                    # 先獲取天數（只在第一次詢問）
+                    days = None
+                    page = 1
+                    while True:
+                        result = action_get_booking_preview_by_date(admin_id, operator=operator_name, days=days, page=page)
+                        if result is not None:
+                            # 如果這是第一次查詢，從函數內部已經獲取了天數，這裡不需要再處理
+                            try:
+                                pagination = result.get("pagination", {})
+                                log_to_mongo(
+                                    action="SEARCH_BOOKING_PREVIEW_BY_DATE",
+                                    operator_id=admin_id,
+                                    operator=operator_name,
+                                    detail={
+                                        "page": pagination.get("page"),
+                                        "result_count": len(result.get("data", [])),
+                                    },
+                                    user_agent="admin_cli",
+                                )
+                            except Exception as e:
+                                print(f"[警告] 日誌記錄失敗: {e}")
+                            
+                            # 分頁導航選單
+                            total_pages = pagination.get("total_pages", 1)
+                            current_page = pagination.get("page", 1)
+                            
+                            print("\n" + "-"*50)
+                            print("分頁導航：")
+                            if current_page > 1:
+                                print("1. 上一頁")
+                            if current_page < total_pages:
+                                print("2. 下一頁")
+                            print("0. 返回")
+                            
+                            nav_choice = input("請選擇：").strip()
+                            
+                            if nav_choice == "1" and current_page > 1:
+                                page = current_page - 1
+                                days = result.get("days", 7)  # 保存天數以便後續分頁使用（避免重複詢問）
+                            elif nav_choice == "2" and current_page < total_pages:
+                                page = current_page + 1
+                                days = result.get("days", 7)  # 保存天數以便後續分頁使用（避免重複詢問）
+                            elif nav_choice == "0":
+                                break
+                            else:
+                                print("[錯誤] 無效的選項，請重新選擇。")
+                        else:
+                            break
+                elif choice2 == "3":
                     # 查看訂單詳情 用booking id
                     result = action_get_booking_detail(admin_id, operator=operator_name)
                     if result is not None:

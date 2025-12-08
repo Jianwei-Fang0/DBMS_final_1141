@@ -7,7 +7,6 @@ from typing import Any, Dict, Optional
 from fastapi import APIRouter, Header, Query
 
 from app.services import admin_rules
-from app.db.mongo import log
 
 router = APIRouter(prefix="/api/v1/admin/rules", tags=["admin-rules"])
 
@@ -23,16 +22,6 @@ def get_timeslot_rules(
 ) -> Dict[str, Any]:
     rows = admin_rules.list_timeslot_rules(venue_id=venue_id)
 
-    log(
-        action="SEARCH_TIMESLOT_RULE",
-        operator_id=operator_id,
-        operator=operator,
-        detail={
-            "venue_id": venue_id,
-            "result_count": len(rows),
-        },
-        user_agent=user_agent,
-    )
     return {"data": rows}
 
 
@@ -53,18 +42,6 @@ def get_blocked_slots(
         date_to=date_to,
     )
 
-    log(
-        action="SEARCH_BLOCKED_SLOT",
-        operator_id=operator_id,
-        operator=operator,
-        detail={
-            "venue_id": venue_id,
-            "date_from": str(date_from) if date_from else None,
-            "date_to": str(date_to) if date_to else None,
-            "result_count": len(rows),
-        },
-        user_agent=user_agent,
-    )
     return {"data": rows}
 
 
@@ -79,16 +56,6 @@ def get_rate_plans(
 ) -> Dict[str, Any]:
     rows = admin_rules.list_rate_plans(venue_id=venue_id)
 
-    log(
-        action="SEARCH_RATE_PLAN",
-        operator_id=operator_id,
-        operator=operator,
-        detail={
-            "venue_id": venue_id,
-            "result_count": len(rows),
-        },
-        user_agent=user_agent,
-    )
     return {"data": rows}
 
 
@@ -107,17 +74,6 @@ def get_price_rules(
         version_id=version_id,
     )
 
-    log(
-        action="SEARCH_PRICE_RULE",
-        operator_id=operator_id,
-        operator=operator,
-        detail={
-            "plan_id": plan_id,
-            "version_id": version_id,
-            "result_count": len(rows),
-        },
-        user_agent=user_agent,
-    )
     return {"data": rows}
 
 
@@ -132,14 +88,4 @@ def get_venue_equip(
 ) -> Dict[str, Any]:
     rows = admin_rules.list_venue_equip(venue_id=venue_id)
 
-    log(
-        action="SEARCH_VENUE_EQUIP",
-        operator_id=operator_id,
-        operator=operator,
-        detail={
-            "venue_id": venue_id,
-            "result_count": len(rows),
-        },
-        user_agent=user_agent,
-    )
     return {"data": rows}

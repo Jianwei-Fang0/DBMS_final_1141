@@ -6,7 +6,6 @@ from typing import Any, Dict, List, Optional
 from psycopg.rows import dict_row
 
 from app.db.postgres import get_conn
-from app.db.mongo import log
 
 from datetime import date, time
 
@@ -47,19 +46,6 @@ def list_pending_bookings(
         rows = cur.fetchall()
     
     result = list(rows)
-    
-    # 記錄查詢日誌
-    log(
-        action="SEARCH_PENDING",
-        operator_id=operator_id,
-        operator=operator,
-        detail={
-            "limit": limit,
-            "offset": offset,
-            "result_count": len(result),
-        },
-        user_agent=user_agent,
-    )
     
     return result
 
@@ -127,21 +113,6 @@ def get_booking_preview(
     result = list(rows)
     total_pages = (total + limit - 1) // limit if total > 0 else 1
     
-    # 記錄查詢日誌
-    log(
-        action="SEARCH_BOOKING_PREVIEW",
-        operator_id=operator_id,
-        operator=operator,
-        detail={
-            "page": page,
-            "limit": limit,
-            "result_count": len(result),
-            "total": total,
-            "total_pages": total_pages,
-        },
-        user_agent=user_agent,
-    )
-    
     return {
         "data": result,
         "pagination": {
@@ -201,17 +172,97 @@ def get_booking_detail(
     
     result = dict(row) if row is not None else None
     
-    # 記錄查詢日誌
-    log(
-        action="SEARCH_PENDING_DETAIL",
-        operator_id=operator_id,
-        operator=operator,
-        detail={"booking_id": booking_id},
-        user_agent=user_agent,
-    )
-    
     return result
 
+def get_booking_preview_by_date(
+    days: int = 7,
+    page: int = 1,
+    limit: int = 20,
+    operator_id: Optional[int] = None,
+    operator: Optional[str] = None,
+    user_agent: Optional[str] = None,
+) -> Dict[str, Any]:
+    """
+    查詢從今天開始算指定天數內的訂單預覽列表，支援分頁
+    
+    Args:
+        days: 從今天開始算的天數（預設7天）
+        page: 頁碼（預設1）
+        limit: 每頁筆數（預設20）
+        operator_id: 操作者ID
+        operator: 操作者名稱
+        user_agent: User-Agent
+    
+    Returns:
+        包含訂單列表和分頁資訊的字典
+    """
+    from datetime import date, timedelta
+    
+    offset = (page - 1) * limit
+    start_date = date.today()
+    end_date = start_date + timedelta(days=days)
+    
+    sql = """
+    SELECT
+      b.booking_id,
+      b.purpose,
+      b.date,
+      b.start_time,
+      b.end_time,
+      b.people,
+      b.amount_est,
+      b.deposit,
+      b.status,
+      b.created_at AS booking_created_at,
+      u.name  AS applicant_name,
+      u.email AS applicant_email,
+      u.phone AS applicant_phone,
+      o.name  AS org_name,
+      v.name  AS venue_name,
+      v.type  AS venue_type,
+      bd.name AS building_name,
+      COALESCE(ARRAY_AGG(ur.role) FILTER (WHERE ur.role IS NOT NULL), ARRAY[]::VARCHAR[]) AS user_roles
+    FROM booking b
+    JOIN "user"   u  ON b.user_id = u.user_id
+    LEFT JOIN user_role ur ON u.user_id = ur.user_id
+    LEFT JOIN org o  ON u.org_id = o.org_id
+    JOIN venue    v  ON b.venue_id = v.venue_id
+    JOIN building bd ON v.building_id = bd.building_id
+    WHERE b.date >= %s AND b.date <= %s
+    GROUP BY b.booking_id, b.purpose, b.date, b.start_time, b.end_time, 
+             b.people, b.amount_est, b.deposit, b.status, b.created_at,
+             u.name, u.email, u.phone, o.name, v.name, v.type, bd.name
+    ORDER BY b.date ASC, b.start_time ASC
+    LIMIT %s OFFSET %s;
+    """
+    
+    # 計算總數
+    count_sql = """
+    SELECT COUNT(DISTINCT b.booking_id) as total
+    FROM booking b
+    WHERE b.date >= %s AND b.date <= %s;
+    """
+    
+    with get_conn() as conn, conn.cursor(row_factory=dict_row) as cur:
+        cur.execute(sql, (start_date, end_date, limit, offset))
+        rows = cur.fetchall()
+        
+        cur.execute(count_sql, (start_date, end_date))
+        total_row = cur.fetchone()
+        total = total_row['total'] if total_row else 0
+    
+    result = list(rows)
+    total_pages = (total + limit - 1) // limit if total > 0 else 1
+    
+    return {
+        "data": result,
+        "pagination": {
+            "page": page,
+            "limit": limit,
+            "total": total,
+            "total_pages": total_pages,
+        },
+    }
 
 # === 3. 審核歷史 ===
 def get_booking_history(
@@ -241,15 +292,6 @@ def get_booking_history(
         rows = cur.fetchall()
     
     result = list(rows)
-    
-    # 記錄查詢日誌
-    log(
-        action="SEARCH_PENDING_HISTORY",
-        operator_id=operator_id,
-        operator=operator,
-        detail={"booking_id": booking_id, "result_count": len(result)},
-        user_agent=user_agent,
-    )
     
     return result
 
@@ -284,22 +326,6 @@ def approve_booking(
     # psycopg 會把 json 型別 decode 成 Python dict/list
     result = row[0]
     
-    # 記錄操作日誌（只在成功時記錄）
-    if result.get("success", False):
-        log(
-            action="APPROVE_PENDING",
-            operator_id=approver_id,
-            operator=operator,
-            detail={
-                "booking_id": booking_id,
-                "step": step,
-                "final": final,
-                "comment": comment,
-                "result": result,
-            },
-            user_agent=user_agent,
-        )
-    
     return result
 
 
@@ -327,21 +353,6 @@ def reject_booking(
 
     result = row[0]
     
-    # 記錄操作日誌（只在成功時記錄）
-    if result.get("success", False):
-        log(
-            action="REJECT_PENDING",
-            operator_id=approver_id,
-            operator=operator,
-            detail={
-                "booking_id": booking_id,
-                "step": step,
-                "comment": comment,
-                "result": result,
-            },
-            user_agent=user_agent,
-        )
-    
     return result
 
 
@@ -368,21 +379,6 @@ def request_changes(
         return {"success": False, "error": "request_changes returned no result"}
 
     result = row[0]
-    
-    # 記錄操作日誌（只在成功時記錄）
-    if result.get("success", False):
-        log(
-            action="REQUEST_CHANGES",
-            operator_id=approver_id,
-            operator=operator,
-            detail={
-                "booking_id": booking_id,
-                "step": step,
-                "comment": comment,
-                "result": result,
-            },
-            user_agent=user_agent,
-        )
     
     return result
 
@@ -452,16 +448,6 @@ def check_booking(
     
     result = dict(row) if row is not None else None
     
-    # 記錄查詢日誌
-    if result:
-        log(
-            action="COMPREHENSIVE_APPROVAL_CHECK",
-            operator_id=operator_id,
-            operator=operator,
-            detail={"booking_id": booking_id, "result": result},
-            user_agent=user_agent,
-        )
-    
     return result
 
 
@@ -500,24 +486,6 @@ def modify_booking(
         return {"success": False, "error": "modify_booking returned no result"}
 
     result = row[0]
-    
-    # 記錄操作日誌（只在成功時記錄）
-    if result.get("success", False):
-        log(
-            action="BOOKING_MODIFY_FULL_FLOW",
-            operator_id=operator_id,
-            operator=operator,
-            detail={
-                "booking_id": booking_id,
-                "new_date": str(new_date),
-                "new_start_time": str(new_start_time),
-                "new_end_time": str(new_end_time),
-                "new_venue_id": new_venue_id,
-                "new_people": new_people,
-                "result": result,
-            },
-            user_agent=user_agent,
-        )
     
     return result
 
@@ -559,18 +527,5 @@ def list_booking_overview(
         rows = cur.fetchall()
     
     result = list(rows)
-    
-    # 記錄查詢日誌
-    log(
-        action="SEARCH_ALL_BOOKING_PROCESS",
-        operator_id=operator_id,
-        operator=operator,
-        detail={
-            "limit": limit,
-            "offset": offset,
-            "result_count": len(result),
-        },
-        user_agent=user_agent,
-    )
     
     return result

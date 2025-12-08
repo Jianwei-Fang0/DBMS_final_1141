@@ -268,6 +268,102 @@ def action_get_booking_preview(admin_id: int, operator: Optional[str] = None, pa
         return None
 
 
+def action_get_booking_preview_by_date(admin_id: int, operator: Optional[str] = None, days: Optional[int] = None, page: Optional[int] = None):
+    """查看訂單預覽（從今天開始算指定天數內，分頁）"""
+    from datetime import date, timedelta
+    
+    # 輸入天數（如果沒有輸入，預設7天）
+    if days is None:
+        days_input = input_optional("請輸入天數（直接按 Enter 預設7天）: ")
+        if days_input:
+            try:
+                days = int(days_input)
+                if days < 1:
+                    print("[錯誤] 天數必須大於0")
+                    return None
+            except ValueError:
+                print("[錯誤] 請輸入有效的數字")
+                return None
+        else:
+            days = 7
+    
+    # 輸入頁數
+    if page is None:
+        page = input_int("請輸入頁數（預設 1）: ", min_value=1) or 1
+    if page is None:
+        page = 1
+    
+    # 計算日期範圍
+    start_date = date.today()
+    end_date = start_date + timedelta(days=days)
+    
+    url = f"{BASE_URL}/api/v1/admin/bookings/preview/date"
+    params = {
+        "days": days,
+        "page": page,
+        "limit": 20,
+        "operator_id": admin_id,
+    }
+    if operator:
+        params["operator"] = operator
+    
+    headers = {"User-Agent": "admin_cli"}
+    
+    try:
+        resp = requests.get(url, params=params, headers=headers, timeout=10)
+        if resp.status_code != 200:
+            print("[錯誤] 查詢訂單預覽失敗")
+            show_error(resp)
+            return None
+        
+        result = resp.json()
+        bookings = result.get("data", [])
+        pagination = result.get("pagination", {})
+        
+        if not bookings:
+            print(f"\n從 {start_date} 到 {end_date} 沒有訂單")
+            return None
+        
+        print(f"\n{'='*60}")
+        print(f"訂單預覽（{start_date} 至 {end_date}，共 {days} 天）")
+        print(f"第 {pagination.get('page', 1)} 頁 / 共 {pagination.get('total_pages', 1)} 頁")
+        print(f"總共 {pagination.get('total', 0)} 筆訂單")
+        print(f"{'='*60}")
+        
+        for i, b in enumerate(bookings, 1):
+            print(f"\n[{i}] 訂單 ID: {b['booking_id']}")
+            print(f"    申請人: {b.get('applicant_name', 'N/A')}")
+            print(f"    聯絡方式: {b.get('applicant_email', 'N/A')} / {b.get('applicant_phone', 'N/A')}")
+            print(f"    組織: {b.get('org_name', 'N/A')}")
+            print(f"    角色: {', '.join(b.get('user_roles', [])) if b.get('user_roles') else 'N/A'}")
+            print(f"    場地: {b.get('venue_name', 'N/A')} ({b.get('venue_type', 'N/A')})")
+            print(f"    用途: {b.get('purpose', 'N/A')}")
+            print(f"    日期: {b.get('date', 'N/A')} {b.get('start_time', 'N/A')}-{b.get('end_time', 'N/A')}")
+            print(f"    人數: {b.get('people', 'N/A')}")
+            print(f"    狀態: {b.get('status', 'N/A')}")
+            # 安全處理金額格式化（可能是字符串或數字）
+            amount_est = b.get('amount_est', 0)
+            deposit = b.get('deposit', 0)
+            try:
+                amount_est = float(amount_est) if amount_est not in (None, 'N/A', '') else 0
+                deposit = float(deposit) if deposit not in (None, 'N/A', '') else 0
+                print(f"    預估金額: ${amount_est:.2f}")
+                print(f"    押金: ${deposit:.2f}")
+            except (ValueError, TypeError):
+                print(f"    預估金額: {amount_est}")
+                print(f"    押金: {deposit}")
+        
+        print(f"\n分頁資訊: 第 {pagination.get('page', 1)} 頁 / 共 {pagination.get('total_pages', 1)} 頁")
+        print(f"顯示 {len(bookings)} 筆，總共 {pagination.get('total', 0)} 筆")
+        
+        # 在結果中添加天數信息，以便分頁時使用
+        result["days"] = days
+        return result
+    except Exception as e:
+        print(f"[錯誤] 查詢失敗: {e}")
+        return None
+
+
 def action_get_booking_detail(admin_id: int, operator: Optional[str] = None, booking_id: Optional[int] = None):
     """查看訂單詳情"""
     if booking_id is None:
