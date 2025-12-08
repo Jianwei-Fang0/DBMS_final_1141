@@ -176,6 +176,52 @@ def create_booking(
     with get_conn() as conn:
         try:
             conn.execute("BEGIN")
+            
+            # 0) 衝突檢查：檢查該時段是否與已批准的訂單衝突
+            conflict_check_sql = """
+            WITH slot_len AS (
+              SELECT COALESCE((
+                SELECT tr.slot_minute
+                FROM timeslot_rule tr
+                WHERE tr.venue_id = %s
+                  AND tr.weekday = EXTRACT(DOW FROM %s::date)
+                LIMIT 1
+              ), 30)::int AS m
+            ),
+            req AS (
+              SELECT generate_series(
+                (%s::date || ' ' || %s::time)::timestamp,
+                (%s::date || ' ' || %s::time)::timestamp - (m || ' minutes')::interval,
+                (m || ' minutes')::interval
+              ) AS slot_start
+              FROM slot_len
+            )
+            SELECT EXISTS (
+              SELECT 1
+              FROM booking_slot s
+              JOIN booking ob ON ob.booking_id = s.booking_id
+              WHERE s.venue_id = %s
+                AND ob.status IN ('Approved', 'PendingPayment')
+                AND s.slot_start IN (SELECT slot_start FROM req)
+            ) AS has_conflict;
+            """
+            
+            with conn.cursor() as cur:
+                cur.execute(
+                    conflict_check_sql,
+                    (
+                        venue_id, date_str,  # slot_len: venue_id, date
+                        date_str, start_time, date_str, end_time,  # req: date, start, date, end
+                        venue_id,  # WHERE venue_id
+                    ),
+                )
+                conflict_result = cur.fetchone()
+                if conflict_result and conflict_result[0]:
+                    raise ValueError(
+                        f"該時段與已批准的訂單衝突，無法創建預約。"
+                        f"場地已被預約：{date_str} {start_time}-{end_time}"
+                    )
+            
             version_id = get_rate_version(conn, venue_id, date_str)
             amount_est = estimate_amount(
                 conn,

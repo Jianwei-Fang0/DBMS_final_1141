@@ -130,10 +130,11 @@ DECLARE
   v_m INT := 30;
   v_expected INT;
   v_inserted INT;
+  v_amount_est NUMERIC(10,2);
 BEGIN
   -- 1) 鎖住該 booking（避免並發）
-  SELECT status, venue_id, date, start_time, end_time
-  INTO v_status, v_venue, v_date, v_s, v_e
+  SELECT status, venue_id, date, start_time, end_time, amount_est
+  INTO v_status, v_venue, v_date, v_s, v_e, v_amount_est
   FROM BOOKING
   WHERE booking_id = p_booking_id
   FOR UPDATE;
@@ -226,6 +227,12 @@ BEGIN
           CASE WHEN p_final THEN 'Approved' ELSE 'Pending' END,
           COALESCE(p_comment, ''),
           now());
+
+  -- 7) 若為最終批准且金額大於0，創建待付款記錄
+  IF p_final AND v_amount_est > 0 THEN
+    INSERT INTO PAYMENT (booking_id, method, amount, type, status, created_at)
+    VALUES (p_booking_id, 'Transfer', v_amount_est, 'Rent', 'Pending', now());
+  END IF;
 
   RETURN json_build_object('success', true,
                            'booking_id', p_booking_id,

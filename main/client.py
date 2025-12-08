@@ -250,13 +250,18 @@ def action_create_booking(user_id: int):
     print("6. 第一學生活動中心 (SAC1)")
     print("7. 第二學生活動中心 (SAC2)")
 
+    # 1. 選擇大樓
     try:
-        venue_id_str = input_nonempty("請輸入場地 ID (1-7): ")
-        venue_id = int(venue_id_str)
+        building_id_str = input_nonempty("請輸入大樓 ID (1-7): ")
+        building_id = int(building_id_str)
+        if building_id < 1 or building_id > 7:
+            print("[錯誤] 大樓 ID 必須在 1-7 之間")
+            return None
     except ValueError:
-        print("[錯誤] 場地 ID 必須是整數")
+        print("[錯誤] 大樓 ID 必須是整數")
         return None
 
+    # 2. 輸入日期和時間
     try:
         date = validate_date(input_date("請輸入日期 (YYYY-MM-DD): "))
         start = validate_time(input_time("請輸入開始時間 (HH:MM): "))
@@ -265,6 +270,7 @@ def action_create_booking(user_id: int):
         print(f"[錯誤] {e}")
         return None
 
+    # 3. 輸入人數
     try:
         people_str = input_nonempty("請輸入人數: ")
         people = int(people_str)
@@ -272,6 +278,74 @@ def action_create_booking(user_id: int):
         print("[錯誤] 人數必須是整數")
         return None
 
+    # 4. 查詢該大樓在指定日期時間的可用場地（排除教室）
+    print(f"\n正在查詢大樓 {building_id} 在 {date} {start}-{end} 的可用場地（排除教室）...")
+    url = f"{BASE_URL}/api/v1/venues/availability"
+    # 不傳 venue_type 參數，讓後端返回所有類型，然後在客戶端過濾掉 Classroom
+    params = {
+        "date": date,
+        "start": start,
+        "end": end,
+        "people": people,
+        "building_id": building_id,
+    }
+    
+    try:
+        resp = requests.get(url, params=params, timeout=10)
+        if resp.status_code != 200:
+            print("[錯誤] 查詢可用場地失敗")
+            show_error(resp)
+            return None
+        
+        all_venues = resp.json().get("data", [])
+        # 過濾掉 Classroom 類型的場地
+        available_venues = [v for v in all_venues]
+        
+        if not available_venues:
+            print(f"\n❌ 大樓 {building_id} 在 {date} {start}-{end} 沒有可用的非教室場地")
+            print("💡 提示：教室類型場地不可預約，請選擇其他大樓或時段")
+            return None
+        
+        # 5. 顯示可用場地列表
+        print(f"\n{'='*60}")
+        print(f"可用場地列表（共 {len(available_venues)} 個）")
+        print(f"{'='*60}")
+        for i, v in enumerate(available_venues, 1):
+            venue_id = v.get('venue_id')
+            name = v.get('name', 'N/A')
+            venue_type = v.get('type', 'N/A')
+            capacity = v.get('capacity', 0)
+            min_fee = v.get('min_fee_per_hour', 0)
+            max_fee = v.get('max_fee_per_hour', 0)
+            
+            print(f"\n[{i}] 場地 ID: {venue_id}")
+            print(f"    名稱: {name}")
+            print(f"    類型: {venue_type}")
+            print(f"    容納人數: {capacity}")
+            if min_fee == max_fee:
+                print(f"    費率: ${min_fee:.0f} 元/小時")
+            else:
+                print(f"    費率: ${min_fee:.0f} ~ ${max_fee:.0f} 元/小時")
+        
+        # 6. 讓用戶選擇場地
+        print(f"\n{'='*60}")
+        try:
+            choice_str = input_nonempty(f"請選擇場地編號 (1-{len(available_venues)}): ")
+            choice = int(choice_str)
+            if choice < 1 or choice > len(available_venues):
+                print(f"[錯誤] 請輸入 1-{len(available_venues)} 之間的數字")
+                return None
+            selected_venue = available_venues[choice - 1]
+            venue_id = selected_venue.get('venue_id')
+        except ValueError:
+            print("[錯誤] 請輸入有效的數字")
+            return None
+        
+    except Exception as e:
+        print(f"[錯誤] 查詢失敗: {e}")
+        return None
+
+    # 7. 建立預約
     params = {
         "venue_id": venue_id,
         "date": date,
