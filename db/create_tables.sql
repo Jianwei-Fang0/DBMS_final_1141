@@ -356,3 +356,4 @@ CREATE TABLE refund (
                CHECK (status IN ('Pending','Succeeded','Failed')),
     created_at TIMESTAMP NOT NULL DEFAULT now()
 );
+

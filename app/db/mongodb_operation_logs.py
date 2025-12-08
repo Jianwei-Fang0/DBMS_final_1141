@@ -5,7 +5,7 @@
 
 from pymongo import MongoClient, ASCENDING, DESCENDING
 from datetime import datetime, timedelta
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Any
 import json
 import os
 from dotenv import load_dotenv
@@ -312,16 +312,16 @@ def create_timeseries_collection(
         timeseries_config['granularity'] = granularity
     
     # 建立集合
+    # 建立集合
     try:
-        create_options = {
+        create_options: Dict[str, Any] = {
             'timeseries': timeseries_config
         }
         
         # 可選：TTL 設定
-        if expire_after_seconds:
+        if expire_after_seconds is not None:
             create_options['expireAfterSeconds'] = expire_after_seconds
-        
-        db.create_collection(collection_name, **create_options)
+
         
         print(f'Time-Series 集合 {collection_name} 建立成功')
         print(f'  時間字段: {time_field}')
@@ -380,7 +380,6 @@ def create_log_indexes(db, collection_name: str = 'operation_logs'):
         # 普通集合的索引
         collection.create_index([('action', ASCENDING), ('timestamp', DESCENDING)])
         collection.create_index([('operator_id', ASCENDING), ('timestamp', DESCENDING)])
-        collection.create_index('timestamp')
         collection.create_index('detail.booking_id')
         collection.create_index('detail.payment_id')
         
@@ -420,6 +419,7 @@ def example_usage():
         )
         
         # 範例 2: 記錄新增黑名單操作
+        # blocked_until 目前只記錄在 Mongo 日誌中，實際解禁需由管理員依此手動或由應用程式邏輯處理
         log_operation(
             db,
             action='ADD_BLACKLIST',
@@ -575,7 +575,9 @@ Time-Series 集合的優點：
 - MULTI_APPROVAL: 多關卡審核流程
 - ADD_BLOCKED_SLOT: 鎖定時段
 - ADD_BOOKING_SLOT: 建立 BOOKING_SLOT 切片
-- CHECK_BLACKLIST: 檢查申請人是否在黑名單中
+- CHECK_USER_STATUS (原 CHECK_BLACKLIST): 
+  檢查申請人帳號狀態（例如是否為 Frozen = 黑名單），
+  實作整合在 COMPREHENSIVE_APPROVAL_CHECK 中
 - CHECK_VENUE_SPECIFICATION: 檢查場地規範
 - CHECK_TIME_CONFLICT: 檢查時段衝突
 - CHECK_TIME_RULE: 檢查場地開放時間規則
@@ -587,9 +589,9 @@ Time-Series 集合的優點：
 - BOOKING_MODIFY_FUNCTION: 使用函數處理訂單異動
 
 黑名單管理 (black_list.sql):
-- ADD_BLACKLIST: 新增黑名單紀錄
-- DELETE_BLACKLIST: 刪除黑名單紀錄
-- SEARCH_ALL_BLACKLIST: 查詢黑名單清單
+- ADD_BLACKLIST: 將使用者狀態設為 Frozen（黑名單）
+- DELETE_BLACKLIST: 將使用者狀態恢復為 Active
+- SEARCH_ALL_BLACKLIST: 查詢狀態為 Frozen 的使用者清單
 
 規則與資源設定 (set_rule.sql):
 - SEARCH_TIMESLOT_RULE_ALL: 查看所有場地的時段規則

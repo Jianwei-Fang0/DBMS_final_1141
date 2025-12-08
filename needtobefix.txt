@@ -1,0 +1,74 @@
+## DBMS_final_1141
+
+### 0. 開機
+終端機操作
+```uvicorn app.main:app --reload --port 8000```
+建表
+psql "postgresql://ntu:ntu@localhost:5432/ntu_venue_dev" -f db/bootstrap_dev.sql
+※ What've been done
+- PostgreSQL 作為主資料庫，串接成功
+
+- MongoDB 作為操作紀錄（Operation Logs），即 Jian Wei 的 nosql 部分
+
+- FastAPI 做為 RESTful API，可以檢視有沒有把模組都串好
+
+- 完整 user booking flow（查詢可借 → 建立 booking）
+
+- 完整 admin logs 查詢
+
+小結：目前 DB 層已經完全建立，大部分 API 也已完成核心功能。
+
+### 1. 架構
+ntu-venue-booking/
+├─ db/ **所有 SQL 建表、灌資料、定義函數的腳本**
+│  ├─ create_tables.sql
+│  ├─ seed/*.sql
+│  ├─ bootstrap_dev.sql **一鍵建表**
+├─ app/
+│  ├─ main.py **FastAPI 主入口**
+│  ├─ core/config.py **管理環境設定（PG / Mongo）**
+│  ├─ db/pg.py **Postgres 連線**
+│  ├─ db/mongo.py **MongoDB 連線 + 操作紀錄（log system）**
+│  ├─ services/booking.py **商業邏輯層，目前包含 booking flow, admin log flow**
+│  ├─ services/admin_logs.py
+│  ├─ routes/user.py **API 實作**
+│  ├─ routes/admin_logs.py
+│  ├─ queries/user/*.sql **放 SQL Queries 的地方**
+│  ├─ queries/admin/*.sql
+└─ scripts/test_mongo_log.py
+
+### 2. User Flow Demo：查可借場地 + 建立 Booking
+- 查可用場地
+```
+    date = 2025-11-22
+    start = 14:00
+    end = 16:00
+    people = 40
+```
+
+- 建立 booking
+```
+    {
+  "venue_id": 1,
+  "date": "2025-11-22",
+  "start": "14:00",
+  "end": "16:00",
+  "people": 40,
+  "affiliation": "Internal"
+}
+```
+
+### 3. 回 Postgresql 看 booking 紀錄
+
+SELECT booking_id, venue_id, status, date, start_time, end_time
+FROM booking
+ORDER BY booking_id DESC
+LIMIT 5;
+
+### 4. MongoDB 看 log 操作紀錄
+mongosh "mongodb://localhost:27017"
+use ntu_venue_logs  
+db.operation_logs.find().sort({ timestamp: -1 }).limit(5)
+
+### 5. Admin Flow Demo：查詢操作紀錄
+http://127.0.0.1:8000/docs#/

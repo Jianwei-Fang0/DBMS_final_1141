@@ -32,7 +32,7 @@ SELECT
     p.created_at
 FROM PAYMENT p
 JOIN BOOKING b ON p.booking_id = b.booking_id
-JOIN "USER" u ON b.user_id = u.user_id
+JOIN "user" u ON b.user_id = u.user_id
 WHERE p.status = 'Pending'
 ORDER BY p.created_at ASC;
 
@@ -57,10 +57,24 @@ INSERT INTO REFUND (
 );
 
 
--- 依退款結果更新付款狀態（預留）  ACTION: UPDATE_PAYMENT_STATUS_BY_REFUND
-UPDATE PAYMENT
+-- 依退款結果更新付款與退款狀態  ACTION: UPDATE_PAYMENT_STATUS_BY_REFUND
+-- 假設：退款成功時，原付款狀態改為 'Refunded'
+
+-- 1) 更新 REFUND 記錄本身狀態
+UPDATE REFUND
 SET status = 'Succeeded'
-WHERE refund_id = @refund_id  -- 替換為實際的退款ID
-  AND status = 'Pending';  -- 只更新待付款的記錄，避免重複更新
+WHERE refund_id = @refund_id
+  AND status = 'Pending';
+
+-- 2) 對應的 PAYMENT 標記為已退款
+UPDATE PAYMENT p
+SET status = 'Refunded'
+WHERE p.payment_id = (
+    SELECT r.payment_id
+    FROM REFUND r
+    WHERE r.refund_id = @refund_id
+)
+AND p.status IN ('Pending','Succeeded');
+
 
 

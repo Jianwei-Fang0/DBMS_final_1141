@@ -202,7 +202,9 @@ VALUES
     ('user197@ntu.edu.tw', '$2b$12$Wc1AgYh3Ul3Z5x2yvdF7z.abcdefghijklmnopqrstu', '謝彥廷', '0900962499', 'Internal', 61, 'Active'),
     ('user198@ntu.edu.tw', '$2b$12$Wc1AgYh3Ul3Z5x2yvdF7z.abcdefghijklmnopqrstu', 'Henry Lee', '0920212189', 'Internal', 26, 'Active'),
     ('user199@ntu.edu.tw', '$2b$12$Wc1AgYh3Ul3Z5x2yvdF7z.abcdefghijklmnopqrstu', '陳鈺婷', '0920780814', 'Internal', 98, 'Active'),
-    ('user200@ntu.edu.tw', '$2b$12$Wc1AgYh3Ul3Z5x2yvdF7z.abcdefghijklmnopqrstu', 'Henry Hsueh', '0920791652', 'Internal', 145, 'Active');
+    ('user200@ntu.edu.tw', '$2b$12$Wc1AgYh3Ul3Z5x2yvdF7z.abcdefghijklmnopqrstu', 'Henry Hsueh', '0920791652', 'Internal', 145, 'Active'),
+    ('user000@ntu.edu.tw', 'admin', '管理員', '0900000000', 'Internal', 1, 'Active'),
+    ('user001@ntu.edu.tw', 'user123', 'Winter Kim', '0900000001', 'Internal', 2, 'Active');
 
 -- 使用者角色
 INSERT INTO user_role (user_id, role) VALUES (1, 'Applicant');
@@ -405,6 +407,8 @@ INSERT INTO user_role (user_id, role) VALUES (197, 'Finance');
 INSERT INTO user_role (user_id, role) VALUES (198, 'VenueManager');
 INSERT INTO user_role (user_id, role) VALUES (199, 'Applicant');
 INSERT INTO user_role (user_id, role) VALUES (200, 'SysAdmin');
+INSERT INTO user_role (user_id, role) VALUES (201, 'SysAdmin');
+INSERT INTO user_role (user_id, role) VALUES (202, 'Applicant');
 
 -- 組織成員
 INSERT INTO org_member (org_id, user_id, verified_bool) VALUES (113, 1, FALSE);
@@ -607,4 +611,6 @@ INSERT INTO org_member (org_id, user_id, verified_bool) VALUES (61, 197, TRUE);
 INSERT INTO org_member (org_id, user_id, verified_bool) VALUES (26, 198, FALSE);
 INSERT INTO org_member (org_id, user_id, verified_bool) VALUES (98, 199, FALSE);
 INSERT INTO org_member (org_id, user_id, verified_bool) VALUES (145, 200, TRUE);
+INSERT INTO org_member (org_id, user_id, verified_bool) VALUES (1, 201, TRUE);
+INSERT INTO org_member (org_id, user_id, verified_bool) VALUES (1, 202, TRUE);
 

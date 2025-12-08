@@ -1,0 +1,4 @@
+  PG_DSN=postgresql://ntu:ntu@localhost:5432/ntu_venue_dev
+  MONGO_URI=mongodb://localhost:27017
+  MONGO_DB=ntu_process_logs
+  PORT=8000

@@ -1,3 +1,20 @@
-/documents
-/data
+# Python
+__pycache__/
+*.pyc
+
+# venv
+.venv/
+venv/
+
+# OS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+
+# env / secrets
 .env
+
+# misc
+*.log

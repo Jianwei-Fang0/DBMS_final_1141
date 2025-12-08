@@ -1,0 +1,9 @@
+fastapi
+uvicorn[standard]
+psycopg[binary]   # psycopg3
+psycopg-pool   # ConnectionPool for psycopg3
+pymongo
+python-dotenv
+pydantic
+bcrypt
+requests
